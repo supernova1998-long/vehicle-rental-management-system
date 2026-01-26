@@ -16,7 +16,10 @@
         <SplitPane orientation="VERTICAL">
             <items>
                 <!-- Car Management Section -->
-                <VBox spacing="10" padding="10">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
                     <Label text="Cars" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
                     <TableView fx:id="carTable" prefHeight="200">
                         <columns>
@@ -29,7 +32,10 @@
                 </VBox>
 
                 <!-- Reservation Management Section -->
-                <VBox spacing="10" padding="10">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
                     <Label text="Reservations" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
                     <TableView fx:id="reservationTable" prefHeight="200">
                         <columns>
