@@ -19,7 +19,7 @@ public class RentalService {
 
     // Start a rental from a reservation
     public void startRental(String rentalId, Reservation reservation, double dailyRate) {
-        Car car = CarFileManager.findCarById(reservation.getCarId());
+        Car car = CarFileManager.findCarById(reservation.getVehicleId());
         if (car == null || !car.isAvailable()) {
             System.out.println("RentalService: Car not available for rental.");
             return;
