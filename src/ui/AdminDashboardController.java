@@ -1,10 +1,9 @@
 package ui;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.paint.Color;
 import javafx.event.ActionEvent;
 
 import model.Car;
@@ -17,110 +16,95 @@ import java.util.List;
 
 public class AdminDashboardController {
 
-    @FXML
-    private TableView<Car> carTable;
+    @FXML private TableView<Car> carTable;
+    @FXML private TableColumn<Car, String> carIdColumn;
+    @FXML private TableColumn<Car, String> carModelColumn;
+    @FXML private TableColumn<Car, Boolean> carAvailabilityColumn;
 
-    @FXML
-    private TableColumn<Car, String> carIdColumn;
+    @FXML private TableView<Reservation> reservationTable;
+    @FXML private TableColumn<Reservation, String> reservationIdColumn;
+    @FXML private TableColumn<Reservation, String> reservationCustomerColumn;
+    @FXML private TableColumn<Reservation, String> reservationCarColumn;
+    @FXML private TableColumn<Reservation, String> reservationStatusColumn;
 
-    @FXML
-    private TableColumn<Car, String> carModelColumn;
-
-    @FXML
-    private TableColumn<Car, Boolean> carAvailabilityColumn;
-
-    @FXML
-    private TableView<Reservation> reservationTable;
-
-    @FXML
-    private TableColumn<Reservation, String> reservationIdColumn;
-
-    @FXML
-    private TableColumn<Reservation, String> reservationCustomerColumn;
-
-    @FXML
-    private TableColumn<Reservation, String> reservationCarColumn;
-
-    @FXML
-    private TableColumn<Reservation, String> reservationStatusColumn;
-
-    @FXML
-    private Button approveReservationButton;
-
-    @FXML
-    private Button convertToRentalButton;
-
-    @FXML
-    private Button removeCarButton;
-
-    @FXML
-    private Label messageLabel;
+    @FXML private Label messageLabel;
 
     private CarService carService = new CarService();
     private ReservationService reservationService = new ReservationService();
     private RentalService rentalService = new RentalService();
 
-    // Initialize dashboard data
     @FXML
     private void initialize() {
+        // 1. Setup Car Table Columns
+        carIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        carModelColumn.setCellValueFactory(new PropertyValueFactory<>("model"));
+
+        // Custom Cell Factory to make Availability look nice
+        carAvailabilityColumn.setCellValueFactory(new PropertyValueFactory<>("available"));
+        carAvailabilityColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Boolean available, boolean empty) {
+                super.updateItem(available, empty);
+                if (empty || available == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(available ? "Available" : "Rented");
+                    setTextFill(available ? Color.GREEN : Color.RED);
+                    setStyle("-fx-font-weight: bold;");
+                }
+            }
+        });
+
+        // 2. Setup Reservation Table Columns
+        reservationIdColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
+        reservationCustomerColumn.setCellValueFactory(new PropertyValueFactory<>("customerId"));
+        reservationCarColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
+        reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        // 3. Load Data
         loadCars();
         loadReservations();
-        // #toconnect: Bind table columns to Car and Reservation properties
     }
 
-    // Load cars into table
     private void loadCars() {
         List<Car> cars = carService.getAllCars();
         carTable.getItems().setAll(cars);
-        messageLabel.setText("Cars loaded: " + cars.size());
     }
 
-    // Load reservations into table
     private void loadReservations() {
         List<Reservation> reservations = reservationService.getAllReservations();
         reservationTable.getItems().setAll(reservations);
-        messageLabel.setText("Reservations loaded: " + reservations.size());
     }
 
-    // Approve selected reservation
     @FXML
     private void handleApproveReservation(ActionEvent event) {
         Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
             reservationService.approveReservation(selected.getReservationId());
             loadReservations();
-            messageLabel.setText("Reservation approved: " + selected.getReservationId());
-            // #toconnect: Refresh UI table after approval
-        } else {
-            messageLabel.setText("No reservation selected.");
+            messageLabel.setText("Reservation " + selected.getReservationId() + " Approved");
         }
     }
 
-    // Convert reservation to rental
     @FXML
     private void handleConvertToRental(ActionEvent event) {
         Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            rentalService.startRental("RNT-" + selected.getReservationId(), selected, 50.0); // Example daily rate
+            rentalService.startRental("RNT-" + selected.getReservationId(), selected, 50.0);
             loadReservations();
-            messageLabel.setText("Reservation converted to rental: " + selected.getReservationId());
-            // #toconnect: Refresh UI table after conversion
-        } else {
-            messageLabel.setText("No reservation selected.");
+            loadCars(); // Refresh cars too since availability likely changed
+            messageLabel.setText("Rental started for " + selected.getReservationId());
         }
     }
 
-    // Remove selected car
     @FXML
     private void handleRemoveCar(ActionEvent event) {
         Car selected = carTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
             carService.removeCar(selected.getId());
             loadCars();
-            messageLabel.setText("Car removed: " + selected.getId());
-            // #toconnect: Refresh UI table after removal
-        } else {
-            messageLabel.setText("No car selected.");
+            messageLabel.setText("Car removed successfully.");
         }
     }
 }
