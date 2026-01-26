@@ -16,7 +16,10 @@
         <SplitPane orientation="VERTICAL">
             <items>
                 <!-- Available Cars Section -->
-                <VBox spacing="10" padding="10">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
                     <Label text="Available Cars" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
                     <TableView fx:id="availableCarsTable" prefHeight="180">
                         <columns>
@@ -29,7 +32,10 @@
                 </VBox>
 
                 <!-- Reservations Section -->
-                <VBox spacing="10" padding="10">
+                <VBox spacing="10">
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
                     <Label text="My Reservations" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
                     <TableView fx:id="reservationTable" prefHeight="180">
                         <columns>
@@ -41,7 +47,10 @@
                 </VBox>
 
                 <!-- Rentals Section -->
-                <VBox spacing="10" padding="10">
+                <VBox spacing="10" >
+                    <padding>
+                        <Insets top="10" right="10" bottom="10" left="10"/>
+                    </padding>
                     <Label text="My Rentals" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
                     <TableView fx:id="rentalTable" prefHeight="180">
                         <columns>
