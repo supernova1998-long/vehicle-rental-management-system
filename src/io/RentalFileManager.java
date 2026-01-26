@@ -1,7 +1,6 @@
 package io;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
 import model.Rental;
 
@@ -9,12 +8,22 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Type;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 public class RentalFileManager {
     private static final String FILE_PATH = "data/rentals.json";
-    private static final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+
+    // UPDATED: Added TypeAdapters for LocalDate to prevent reflection errors
+    private static final Gson gson = new GsonBuilder()
+            .setPrettyPrinting()
+            .registerTypeAdapter(LocalDate.class, (JsonSerializer<LocalDate>) (src, typeOfSrc, context) ->
+                    new JsonPrimitive(src.format(DateTimeFormatter.ISO_LOCAL_DATE)))
+            .registerTypeAdapter(LocalDate.class, (JsonDeserializer<LocalDate>) (json, typeOfT, context) ->
+                    LocalDate.parse(json.getAsString(), DateTimeFormatter.ISO_LOCAL_DATE))
+            .create();
 
     // Load rentals from JSON file
     public static List<Rental> loadRentals() {
@@ -23,7 +32,7 @@ public class RentalFileManager {
             List<Rental> rentals = gson.fromJson(reader, listType);
             return rentals != null ? rentals : new ArrayList<>();
         } catch (IOException e) {
-            System.out.println("Error loading rentals: " + e.getMessage());
+            System.err.println("Error loading rentals: " + e.getMessage());
             return new ArrayList<>();
         }
     }
@@ -33,9 +42,8 @@ public class RentalFileManager {
         try (FileWriter writer = new FileWriter(FILE_PATH)) {
             gson.toJson(rentals, writer);
             System.out.println("Rentals saved successfully.");
-            // #toconnect: RentalService will call this after add/update/remove operations
         } catch (IOException e) {
-            System.out.println("Error saving rentals: " + e.getMessage());
+            System.err.println("Error saving rentals: " + e.getMessage());
         }
     }
 
@@ -45,7 +53,6 @@ public class RentalFileManager {
         rentals.add(rental);
         saveRentals(rentals);
         System.out.println("Rental added: " + rental.getRentalId());
-        // #toconnect: RentalService will wrap this for business logic
     }
 
     // Remove a rental by ID
@@ -54,18 +61,13 @@ public class RentalFileManager {
         rentals.removeIf(r -> r.getRentalId().equals(rentalId));
         saveRentals(rentals);
         System.out.println("Rental removed: " + rentalId);
-        // #toconnect: RentalService will wrap this for business logic
     }
 
     // Find rental by ID
     public static Rental findRentalById(String rentalId) {
-        List<Rental> rentals = loadRentals();
-        for (Rental r : rentals) {
-            if (r.getRentalId().equals(rentalId)) {
-                return r;
-            }
-        }
-        return null;
-        // #toconnect: RentalService will use this for lookups
+        return loadRentals().stream()
+                .filter(r -> r.getRentalId().equals(rentalId))
+                .findFirst()
+                .orElse(null);
     }
 }
