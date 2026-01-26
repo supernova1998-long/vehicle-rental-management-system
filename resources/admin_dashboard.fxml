@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.*?>
+
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="ui.AdminDashboardController"
+            prefWidth="800" prefHeight="600">
+
+    <top>
+        <Label text="Admin Dashboard - Vehicle Rental System"
+               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-padding: 10;" />
+    </top>
+
+    <center>
+        <SplitPane orientation="VERTICAL">
+            <items>
+                <!-- Car Management Section -->
+                <VBox spacing="10" padding="10">
+                    <Label text="Cars" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+                    <TableView fx:id="carTable" prefHeight="200">
+                        <columns>
+                            <TableColumn fx:id="carIdColumn" text="Car ID" prefWidth="150"/>
+                            <TableColumn fx:id="carModelColumn" text="Model" prefWidth="200"/>
+                            <TableColumn fx:id="carAvailabilityColumn" text="Available" prefWidth="100"/>
+                        </columns>
+                    </TableView>
+                    <Button fx:id="removeCarButton" text="Remove Car" onAction="#handleRemoveCar" prefWidth="120"/>
+                </VBox>
+
+                <!-- Reservation Management Section -->
+                <VBox spacing="10" padding="10">
+                    <Label text="Reservations" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
+                    <TableView fx:id="reservationTable" prefHeight="200">
+                        <columns>
+                            <TableColumn fx:id="reservationIdColumn" text="Reservation ID" prefWidth="150"/>
+                            <TableColumn fx:id="reservationCustomerColumn" text="Customer ID" prefWidth="150"/>
+                            <TableColumn fx:id="reservationCarColumn" text="Car ID" prefWidth="150"/>
+                            <TableColumn fx:id="reservationStatusColumn" text="Status" prefWidth="150"/>
+                        </columns>
+                    </TableView>
+                    <HBox spacing="10">
+                        <Button fx:id="approveReservationButton" text="Approve Reservation" onAction="#handleApproveReservation" prefWidth="160"/>
+                        <Button fx:id="convertToRentalButton" text="Convert to Rental" onAction="#handleConvertToRental" prefWidth="160"/>
+                    </HBox>
+                </VBox>
+            </items>
+        </SplitPane>
+    </center>
+
+    <bottom>
+        <Label fx:id="messageLabel" text="" style="-fx-text-fill: green; -fx-padding: 10;" />
+    </bottom>
+</BorderPane>
