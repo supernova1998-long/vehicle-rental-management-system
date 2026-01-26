@@ -1,0 +1,18 @@
+[
+  {
+    "rentalId": "RE001",
+    "reservationId": "R001",
+    "actualStartDate": "2026-01-20",
+    "actualEndDate": "2026-01-22",
+    "totalCharge": 1000.0,
+    "returned": true
+  },
+  {
+    "rentalId": "RE002",
+    "reservationId": "R002",
+    "actualStartDate": "2026-01-26",
+    "actualEndDate": null,
+    "totalCharge": 3400.0,
+    "returned": false
+  }
+]

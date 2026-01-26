@@ -1,0 +1,38 @@
+[
+  {
+    "id": "C001",
+    "model": "Toyota Corolla",
+    "type": "Sedan",
+    "fuel": "Petrol",
+    "seats": 5,
+    "pricePerDay": 500.0,
+    "available": true
+  },
+  {
+    "id": "C002",
+    "model": "Ford Ranger",
+    "type": "Pickup",
+    "fuel": "Diesel",
+    "seats": 5,
+    "pricePerDay": 850.0,
+    "available": false
+  },
+  {
+    "id": "C003",
+    "model": "Tesla Model 3",
+    "type": "Electric",
+    "fuel": "Electric",
+    "seats": 5,
+    "pricePerDay": 1200.0,
+    "available": true
+  },
+  {
+    "id": "C004",
+    "model": "Honda CR-V",
+    "type": "SUV",
+    "fuel": "Hybrid",
+    "seats": 5,
+    "pricePerDay": 700.0,
+    "available": true
+  }
+]

@@ -1,0 +1,42 @@
+[
+  {
+    "reservationId": "R001",
+    "customerId": "CU001",
+    "vehicleId": "C001",
+    "startDate": "2026-01-20",
+    "endDate": "2026-01-22",
+    "status": "COMPLETED"
+  },
+  {
+    "reservationId": "R002",
+    "customerId": "CU002",
+    "vehicleId": "C002",
+    "startDate": "2026-01-26",
+    "endDate": "2026-01-30",
+    "status": "RENTED"
+  },
+  {
+    "reservationId": "R003",
+    "customerId": "CU001",
+    "vehicleId": "C003",
+    "startDate": "2026-02-05",
+    "endDate": "2026-02-07",
+    "status": "APPROVED"
+  },
+  {
+    "reservationId": "R004",
+    "customerId": "CU002",
+    "vehicleId": "C004",
+    "startDate": "2026-02-10",
+    "endDate": "2026-02-15",
+    "status": "PENDING"
+  },
+  {
+    "reservationId": "R005",
+    "customerId": "CU001",
+    "vehicleId": "C001",
+    "startDate": "2026-01-15",
+    "endDate": "2026-01-16",
+    "status": "CANCELLED"
+  }
+]

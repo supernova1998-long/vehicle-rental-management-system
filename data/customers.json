@@ -1,0 +1,16 @@
+[
+  {
+    "id": "CU001",
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "0912345678",
+    "password": "hashed_password_1"
+  },
+  {
+    "id": "CU002",
+    "name": "Jane Smith",
+    "email": "jane@example.com",
+    "phone": "0987654321",
+    "password": "hashed_password_2"
+  }
+]
