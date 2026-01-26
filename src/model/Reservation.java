@@ -5,17 +5,17 @@ import java.time.LocalDate;
 public class Reservation {
     private String reservationId;
     private String customerId;
-    private String carId;
+    private String vehicleId;
     private LocalDate startDate;
     private LocalDate endDate;
     private ReservationStatus status;
 
     // Constructor
-    public Reservation(String reservationId, String customerId, String carId,
+    public Reservation(String reservationId, String customerId, String vehicleId,
                        LocalDate startDate, LocalDate endDate, ReservationStatus status) {
         this.reservationId = reservationId;
         this.customerId = customerId;
-        this.carId = carId;
+        this.vehicleId = vehicleId;
         this.startDate = startDate;
         this.endDate = endDate;
         this.status = status;
@@ -38,12 +38,12 @@ public class Reservation {
         this.customerId = customerId;
     }
 
-    public String getCarId() {
-        return carId;
+    public String getVehicleId() {
+        return vehicleId;
     }
 
-    public void setCarId(String carId) {
-        this.carId = carId;
+    public void setVehicleId(String vehicleId) {
+        this.vehicleId = vehicleId;
     }
 
     public LocalDate getStartDate() {
@@ -94,7 +94,7 @@ public class Reservation {
         return "Reservation{" +
                 "reservationId='" + reservationId + '\'' +
                 ", customerId='" + customerId + '\'' +
-                ", carId='" + carId + '\'' +
+                ", carId='" + vehicleId + '\'' +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +
                 ", status=" + status +
