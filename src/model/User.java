@@ -48,10 +48,8 @@ public abstract class User {
   public void setPhone(String phone) {
     this.phone = phone;
   }
-
-  // Password handling
-  public boolean checkPassword(String pw) {
-    return this.password.equals(pw);
+  public String getPassword() {
+    return password;
   }
 
   public void setPassword(String password) {
