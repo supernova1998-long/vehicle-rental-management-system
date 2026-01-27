@@ -15,7 +15,6 @@
     <center>
         <SplitPane orientation="VERTICAL">
             <items>
-                <!-- Car Management Section -->
                 <VBox spacing="10">
                     <padding>
                         <Insets top="10" right="10" bottom="10" left="10"/>
@@ -25,13 +24,12 @@
                         <columns>
                             <TableColumn fx:id="carIdColumn" text="Car ID" prefWidth="150"/>
                             <TableColumn fx:id="carModelColumn" text="Model" prefWidth="200"/>
-                            <TableColumn fx:id="carAvailabilityColumn" text="Available" prefWidth="100"/>
+                            <TableColumn fx:id="carAvailabilityColumn" text="Status" prefWidth="100"/>
                         </columns>
                     </TableView>
                     <Button fx:id="removeCarButton" text="Remove Car" onAction="#handleRemoveCar" prefWidth="120"/>
                 </VBox>
 
-                <!-- Reservation Management Section -->
                 <VBox spacing="10">
                     <padding>
                         <Insets top="10" right="10" bottom="10" left="10"/>
@@ -46,7 +44,8 @@
                         </columns>
                     </TableView>
                     <HBox spacing="10">
-                        <Button fx:id="approveReservationButton" text="Approve Reservation" onAction="#handleApproveReservation" prefWidth="160"/>
+                        <Button fx:id="approveReservationButton" text="Approve" onAction="#handleApproveReservation" prefWidth="100"/>
+                        <Button fx:id="cancelReservationButton" text="Cancel" onAction="#handleCancelReservation" prefWidth="100"/>
                         <Button fx:id="convertToRentalButton" text="Convert to Rental" onAction="#handleConvertToRental" prefWidth="160"/>
                     </HBox>
                 </VBox>
