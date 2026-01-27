@@ -54,10 +54,23 @@ public class RentalService {
                     Car car = carService.findCarById(res.getVehicleId());
                     if (car != null) {
                         LocalDate returnDate = LocalDate.now();
-                        long days = ChronoUnit.DAYS.between(r.getActualStartDate(), returnDate);
-                        if (days <= 0) days = 1; // Minimum 1 day charge
+                        LocalDate expectedEndDate = res.getEndDate();
                         
-                        double finalPrice = days * car.getPricePerDay();
+                        long totalDays = ChronoUnit.DAYS.between(r.getActualStartDate(), returnDate);
+                        if (totalDays <= 0) totalDays = 1; // Minimum 1 day charge
+                        
+                        double finalPrice = 0.0;
+                        
+                        if (returnDate.isAfter(expectedEndDate)) {
+                            long overdueDays = ChronoUnit.DAYS.between(expectedEndDate, returnDate);
+                            long normalDays = totalDays - overdueDays;
+                            
+                            // Penalty: Double the rate for overdue days
+                            finalPrice = (normalDays * car.getPricePerDay()) + (overdueDays * car.getPricePerDay() * 2);
+                            System.out.println("RentalService: Penalty applied for " + overdueDays + " overdue days.");
+                        } else {
+                            finalPrice = totalDays * car.getPricePerDay();
+                        }
                         
                         // 1. Update Rental Entry
                         r.setReturned(true);
