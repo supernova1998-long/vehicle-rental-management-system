@@ -23,6 +23,10 @@ import java.util.stream.Collectors;
 
 public class AdminDashboardController {
 
+    // --- Common ---
+    @FXML private TabPane tabPane;
+    @FXML private Label messageLabel;
+
     // --- Cars Tab ---
     @FXML private TableView<Car> carTable;
     @FXML private TableColumn<Car, String> carIdColumn;
@@ -67,8 +71,6 @@ public class AdminDashboardController {
     @FXML private TableColumn<Rental, Double> rentalPriceColumn;
     @FXML private TableColumn<Rental, Boolean> rentalPaidColumn;
 
-    @FXML private Label messageLabel;
-
     private CarService carService = new CarService();
     private CustomerService customerService = new CustomerService();
     private ReservationService reservationService = new ReservationService();
@@ -76,7 +78,33 @@ public class AdminDashboardController {
 
     @FXML
     private void initialize() {
-        // Initialize Car Table
+        // --- Initialize Tables ---
+        setupCarTable();
+        setupCustomerTable();
+        setupReservationTable();
+        setupRentalTable();
+
+        // --- Initial Data Load ---
+        refreshAll();
+
+        // --- Listeners ---
+        carTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) populateCarFields(newSelection);
+        });
+
+        customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) populateCustomerFields(newSelection);
+        });
+
+        tabPane.getSelectionModel().selectedItemProperty().addListener((obs, oldTab, newTab) -> {
+            if (newTab != null) {
+                refreshAll();
+                clearMessage();
+            }
+        });
+    }
+
+    private void setupCarTable() {
         carIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         carModelColumn.setCellValueFactory(new PropertyValueFactory<>("model"));
         carTypeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
@@ -84,96 +112,57 @@ public class AdminDashboardController {
         carSeatsColumn.setCellValueFactory(new PropertyValueFactory<>("seats"));
         carPriceColumn.setCellValueFactory(new PropertyValueFactory<>("pricePerDay"));
         carAvailabilityColumn.setCellValueFactory(new PropertyValueFactory<>("available"));
+        carAvailabilityColumn.setCellFactory(column -> createStatusCell(available -> available ? "Available" : "Booked/Rented", available -> available ? Color.GREEN : Color.RED));
+    }
 
-        carAvailabilityColumn.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(Boolean available, boolean empty) {
-                super.updateItem(available, empty);
-                if (empty || available == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(available ? "Available" : "Booked/Rented");
-                    setTextFill(available ? Color.GREEN : Color.RED);
-                }
-            }
-        });
-
-        // Initialize Customer Table
+    private void setupCustomerTable() {
         customerIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         customerNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
         customerEmailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
         customerPhoneColumn.setCellValueFactory(new PropertyValueFactory<>("phone"));
+    }
 
-        // Initialize Reservation Table
+    private void setupReservationTable() {
         reservationIdColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
         reservationCustomerColumn.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         reservationCarColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
         reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+    }
 
-        // Initialize Rental Table
+    private void setupRentalTable() {
         rentalIdColumn.setCellValueFactory(new PropertyValueFactory<>("rentalId"));
         rentalReservationColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
         rentalStartDateColumn.setCellValueFactory(new PropertyValueFactory<>("actualStartDate"));
         rentalEndDateColumn.setCellValueFactory(new PropertyValueFactory<>("actualEndDate"));
         rentalPriceColumn.setCellValueFactory(new PropertyValueFactory<>("totalCharge"));
         rentalPaidColumn.setCellValueFactory(new PropertyValueFactory<>("paid"));
+        rentalPaidColumn.setCellFactory(column -> createStatusCell(paid -> paid ? "Yes" : "No", paid -> paid ? Color.GREEN : Color.RED));
+    }
 
-        rentalPaidColumn.setCellFactory(column -> new TableCell<>() {
+    private <T> TableCell<T, Boolean> createStatusCell(java.util.function.Function<Boolean, String> textMapper, java.util.function.Function<Boolean, Color> colorMapper) {
+        return new TableCell<>() {
             @Override
-            protected void updateItem(Boolean paid, boolean empty) {
-                super.updateItem(paid, empty);
-                if (empty || paid == null) {
+            protected void updateItem(Boolean item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
                     setText(null);
                     setStyle("");
                 } else {
-                    setText(paid ? "Yes" : "No");
-                    setTextFill(paid ? Color.GREEN : Color.RED);
+                    setText(textMapper.apply(item));
+                    setTextFill(colorMapper.apply(item));
                 }
             }
-        });
-
-        // Load Data
-        loadCars();
-        loadCustomers();
-        loadReservations();
-        loadRentals();
-        
-        // Add listener to car table selection to populate edit fields
-        carTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-                populateCarFields(newSelection);
-            }
-        });
-
-        // Add listener to customer table selection to populate edit fields
-        customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
-            if (newSelection != null) {
-                populateCustomerFields(newSelection);
-            }
-        });
+        };
     }
 
-    private void loadCars() {
-        carTable.getItems().setAll(carService.getAllCars());
-    }
-
-    private void loadCustomers() {
-        customerTable.getItems().setAll(customerService.getAllCustomers());
-    }
-
-    private void loadReservations() {
-        reservationTable.getItems().setAll(reservationService.getAllReservations());
-    }
-
+    private void loadCars() { carTable.getItems().setAll(carService.getAllCars()); }
+    private void loadCustomers() { customerTable.getItems().setAll(customerService.getAllCustomers()); }
+    private void loadReservations() { reservationTable.getItems().setAll(reservationService.getAllReservations()); }
     private void loadRentals() {
-        // Only show returned rentals
-        List<Rental> returnedRentals = rentalService.getAllRentals().stream()
-                .filter(Rental::isReturned)
-                .collect(Collectors.toList());
+        List<Rental> returnedRentals = rentalService.getAllRentals().stream().filter(Rental::isReturned).collect(Collectors.toList());
         rentalTable.getItems().setAll(returnedRentals);
     }
-    
+
     private void populateCarFields(Car car) {
         newCarModelField.setText(car.getModel());
         newCarTypeField.setText(car.getType());
@@ -189,237 +178,127 @@ public class AdminDashboardController {
         customerPasswordField.setText(customer.getPassword());
     }
 
-    // --- Car Actions ---
-
-    @FXML
-    private void handleAddCar(ActionEvent event) {
-        String model = newCarModelField.getText();
-        String type = newCarTypeField.getText();
-        String fuel = newCarFuelField.getText();
-        String seatsStr = newCarSeatsField.getText();
-        String priceStr = newCarPriceField.getText();
-
-        String validationError = ValidationService.validateCarInput(model, type, fuel, seatsStr, priceStr);
+    @FXML private void handleAddCar(ActionEvent event) {
+        String validationError = ValidationService.validateCarInput(newCarModelField.getText(), newCarTypeField.getText(), newCarFuelField.getText(), newCarSeatsField.getText(), newCarPriceField.getText());
         if (validationError != null) {
-            messageLabel.setText(validationError);
-            messageLabel.setTextFill(Color.RED);
+            showMessage(validationError, true);
             return;
         }
-
-        int seats = Integer.parseInt(seatsStr);
-        double price = Double.parseDouble(priceStr);
-
-        String id = carService.generateNextId();
-        Car newCar = new Car(id, model, true, type, fuel, seats, price);
-        carService.addCar(newCar);
-
-        loadCars();
+        carService.addCar(new Car(carService.generateNextId(), newCarModelField.getText(), true, newCarTypeField.getText(), newCarFuelField.getText(), Integer.parseInt(newCarSeatsField.getText()), Double.parseDouble(newCarPriceField.getText())));
+        refreshAll();
         clearCarInputFields();
-        messageLabel.setText("Car added successfully!");
-        messageLabel.setTextFill(Color.GREEN);
+        showMessage("Car added successfully.", false);
     }
 
-    @FXML
-    private void handleEditCar(ActionEvent event) {
+    @FXML private void handleEditCar(ActionEvent event) {
         Car selected = carTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            messageLabel.setText("Please select a car to edit.");
-            messageLabel.setTextFill(Color.RED);
-            return;
-        }
+        if (selected == null) { showMessage("Please select a car to edit.", true); return; }
+        if (!selected.isAvailable()) { showMessage("Cannot edit car: It is currently booked or rented.", true); return; }
 
-        if (!selected.isAvailable()) {
-            messageLabel.setText("Cannot edit car: Car is currently booked or rented.");
-            messageLabel.setTextFill(Color.RED);
-            return;
-        }
-
-        String model = newCarModelField.getText();
-        String type = newCarTypeField.getText();
-        String fuel = newCarFuelField.getText();
-        String seatsStr = newCarSeatsField.getText();
-        String priceStr = newCarPriceField.getText();
-
-        String validationError = ValidationService.validateCarInput(model, type, fuel, seatsStr, priceStr);
+        String validationError = ValidationService.validateCarInput(newCarModelField.getText(), newCarTypeField.getText(), newCarFuelField.getText(), newCarSeatsField.getText(), newCarPriceField.getText());
         if (validationError != null) {
-            messageLabel.setText(validationError);
-            messageLabel.setTextFill(Color.RED);
+            showMessage(validationError, true);
             return;
         }
-
-        int seats = Integer.parseInt(seatsStr);
-        double price = Double.parseDouble(priceStr);
-
-        selected.setModel(model);
-        selected.setType(type);
-        selected.setFuel(fuel);
-        selected.setSeats(seats);
-        selected.setPricePerDay(price);
-
+        selected.setModel(newCarModelField.getText());
+        selected.setType(newCarTypeField.getText());
+        selected.setFuel(newCarFuelField.getText());
+        selected.setSeats(Integer.parseInt(newCarSeatsField.getText()));
+        selected.setPricePerDay(Double.parseDouble(newCarPriceField.getText()));
         carService.updateCar(selected);
-        loadCars();
+        refreshAll();
         clearCarInputFields();
-        messageLabel.setText("Car updated successfully!");
-        messageLabel.setTextFill(Color.GREEN);
+        showMessage("Car updated successfully.", false);
     }
 
-    @FXML
-    private void handleRemoveCar(ActionEvent event) {
+    @FXML private void handleRemoveCar(ActionEvent event) {
         Car selected = carTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            if (carService.canRemoveOrEdit(selected.getId())) {
-                carService.removeCar(selected.getId());
-                loadCars();
-                clearCarInputFields();
-                messageLabel.setText("Car removed.");
-                messageLabel.setTextFill(Color.GREEN);
-            } else {
-                messageLabel.setText("Cannot remove: Car has active reservations.");
-                messageLabel.setTextFill(Color.RED);
-            }
-        }
+        if (selected == null) { showMessage("Please select a car to remove.", true); return; }
+        if (!carService.canRemoveOrEdit(selected.getId())) { showMessage("Cannot remove car: It has active reservations.", true); return; }
+        carService.removeCar(selected.getId());
+        refreshAll();
+        clearCarInputFields();
+        showMessage("Car removed successfully.", false);
     }
 
-    // --- Customer Actions ---
-
-    @FXML
-    private void handleAddCustomer(ActionEvent event) {
-        String name = customerNameField.getText();
-        String email = customerEmailField.getText();
-        String phone = customerPhoneField.getText();
-        String password = customerPasswordField.getText();
-
-        String validationError = ValidationService.validateCustomerInput(name, email, phone, password);
+    @FXML private void handleAddCustomer(ActionEvent event) {
+        String validationError = ValidationService.validateCustomerInput(customerNameField.getText(), customerEmailField.getText(), customerPhoneField.getText(), customerPasswordField.getText());
         if (validationError != null) {
-            messageLabel.setText(validationError);
-            messageLabel.setTextFill(Color.RED);
+            showMessage(validationError, true);
             return;
         }
-
-        String id = customerService.generateNextId();
-        Customer newCustomer = new Customer(id, name, email, phone, password);
-        customerService.addCustomer(newCustomer);
-
-        loadCustomers();
+        customerService.addCustomer(new Customer(customerService.generateNextId(), customerNameField.getText(), customerEmailField.getText(), customerPhoneField.getText(), customerPasswordField.getText()));
+        refreshAll();
         clearCustomerInputFields();
-        messageLabel.setText("Customer added successfully!");
-        messageLabel.setTextFill(Color.GREEN);
+        showMessage("Customer added successfully.", false);
     }
 
-    @FXML
-    private void handleEditCustomer(ActionEvent event) {
+    @FXML private void handleEditCustomer(ActionEvent event) {
         Customer selected = customerTable.getSelectionModel().getSelectedItem();
-        if (selected == null) {
-            messageLabel.setText("Please select a customer to edit.");
-            messageLabel.setTextFill(Color.RED);
-            return;
-        }
-
-        String name = customerNameField.getText();
-        String email = customerEmailField.getText();
-        String phone = customerPhoneField.getText();
-        String password = customerPasswordField.getText();
-
-        String validationError = ValidationService.validateCustomerInput(name, email, phone, password);
+        if (selected == null) { showMessage("Please select a customer to edit.", true); return; }
+        String validationError = ValidationService.validateCustomerInput(customerNameField.getText(), customerEmailField.getText(), customerPhoneField.getText(), customerPasswordField.getText());
         if (validationError != null) {
-            messageLabel.setText(validationError);
-            messageLabel.setTextFill(Color.RED);
+            showMessage(validationError, true);
             return;
         }
-
-        selected.setName(name);
-        selected.setEmail(email);
-        selected.setPhone(phone);
-        selected.setPassword(password);
-
+        selected.setName(customerNameField.getText());
+        selected.setEmail(customerEmailField.getText());
+        selected.setPhone(customerPhoneField.getText());
+        selected.setPassword(customerPasswordField.getText());
         customerService.updateCustomer(selected);
-        loadCustomers();
+        refreshAll();
         clearCustomerInputFields();
-        messageLabel.setText("Customer updated successfully!");
-        messageLabel.setTextFill(Color.GREEN);
+        showMessage("Customer updated successfully.", false);
     }
 
-    @FXML
-    private void handleRemoveCustomer(ActionEvent event) {
+    @FXML private void handleRemoveCustomer(ActionEvent event) {
         Customer selected = customerTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            if (customerService.removeCustomer(selected.getId())) {
-                loadCustomers();
-                clearCustomerInputFields();
-                messageLabel.setText("Customer removed.");
-                messageLabel.setTextFill(Color.GREEN);
-            } else {
-                messageLabel.setText("Cannot remove: Customer has active/pending reservations.");
-                messageLabel.setTextFill(Color.RED);
-            }
-        }
+        if (selected == null) { showMessage("Please select a customer to remove.", true); return; }
+        if (!customerService.removeCustomer(selected.getId())) { showMessage("Cannot remove customer: They have active or pending reservations.", true); return; }
+        refreshAll();
+        clearCustomerInputFields();
+        showMessage("Customer removed successfully.", false);
     }
 
-    // --- Reservation Actions ---
-
-    @FXML
-    private void handleApproveReservation(ActionEvent event) {
+    @FXML private void handleApproveReservation(ActionEvent event) {
         Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
-        if (selected != null && selected.getStatus() == ReservationStatus.PENDING) {
-            reservationService.approveReservation(selected.getReservationId());
-            refreshAll();
-            messageLabel.setText("Reservation " + selected.getReservationId() + " Approved");
-            messageLabel.setTextFill(Color.GREEN);
-        } else {
-            messageLabel.setText("Selection must be PENDING to approve.");
-            messageLabel.setTextFill(Color.RED);
-        }
+        if (selected == null) { showMessage("Please select a reservation to approve.", true); return; }
+        if (selected.getStatus() != ReservationStatus.PENDING) { showMessage("Only PENDING reservations can be approved.", true); return; }
+        reservationService.approveReservation(selected.getReservationId());
+        refreshAll();
+        showMessage("Reservation " + selected.getReservationId() + " approved.", false);
     }
 
-    @FXML
-    private void handleCancelReservation(ActionEvent event) {
+    @FXML private void handleCancelReservation(ActionEvent event) {
         Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            if (selected.getStatus() == ReservationStatus.PENDING) {
-                reservationService.cancelReservation(selected.getReservationId());
-                refreshAll();
-                messageLabel.setText("Reservation Cancelled.");
-                messageLabel.setTextFill(Color.ORANGE);
-            } else if (selected.getStatus() == ReservationStatus.APPROVED) {
-                reservationService.revertApproval(selected.getReservationId());
-                refreshAll();
-                messageLabel.setText("Reservation Reverted to PENDING.");
-                messageLabel.setTextFill(Color.BLUE);
-            } else {
-                messageLabel.setText("Can only cancel PENDING or revert APPROVED reservations.");
-                messageLabel.setTextFill(Color.RED);
-            }
+        if (selected == null) { showMessage("Please select a reservation to cancel or revert.", true); return; }
+        if (selected.getStatus() == ReservationStatus.PENDING) {
+            reservationService.cancelReservation(selected.getReservationId());
+            refreshAll();
+            showMessage("Reservation " + selected.getReservationId() + " has been cancelled.", false);
+        } else if (selected.getStatus() == ReservationStatus.APPROVED) {
+            reservationService.revertApproval(selected.getReservationId());
+            refreshAll();
+            showMessage("Reservation " + selected.getReservationId() + " has been reverted to PENDING.", false);
+        } else {
+            showMessage("Only PENDING or APPROVED reservations can be managed here.", true);
         }
     }
 
-    // --- Rental Actions ---
-
-    @FXML
-    private void handleMarkPaid(ActionEvent event) {
+    @FXML private void handleMarkPaid(ActionEvent event) {
         Rental selected = rentalTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            rentalService.updateRentalPaidStatus(selected.getRentalId(), true);
-            refreshAll();
-            messageLabel.setText("Rental " + selected.getRentalId() + " marked as PAID.");
-            messageLabel.setTextFill(Color.GREEN);
-        } else {
-            messageLabel.setText("Please select a rental.");
-            messageLabel.setTextFill(Color.RED);
-        }
+        if (selected == null) { showMessage("Please select a rental to mark as paid.", true); return; }
+        rentalService.updateRentalPaidStatus(selected.getRentalId(), true);
+        refreshAll();
+        showMessage("Rental " + selected.getRentalId() + " marked as PAID.", false);
     }
 
-    @FXML
-    private void handleMarkUnpaid(ActionEvent event) {
+    @FXML private void handleMarkUnpaid(ActionEvent event) {
         Rental selected = rentalTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            rentalService.updateRentalPaidStatus(selected.getRentalId(), false);
-            refreshAll();
-            messageLabel.setText("Rental " + selected.getRentalId() + " marked as UNPAID.");
-            messageLabel.setTextFill(Color.ORANGE);
-        } else {
-            messageLabel.setText("Please select a rental.");
-            messageLabel.setTextFill(Color.RED);
-        }
+        if (selected == null) { showMessage("Please select a rental to mark as unpaid.", true); return; }
+        rentalService.updateRentalPaidStatus(selected.getRentalId(), false);
+        refreshAll();
+        showMessage("Rental " + selected.getRentalId() + " marked as UNPAID.", false);
     }
 
     private void clearCarInputFields() {
@@ -435,6 +314,15 @@ public class AdminDashboardController {
         customerEmailField.clear();
         customerPhoneField.clear();
         customerPasswordField.clear();
+    }
+
+    private void showMessage(String message, boolean isError) {
+        messageLabel.setText(message);
+        messageLabel.setTextFill(isError ? Color.RED : Color.GREEN);
+    }
+
+    private void clearMessage() {
+        messageLabel.setText("");
     }
 
     private void refreshAll() {
