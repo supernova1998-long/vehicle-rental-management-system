@@ -5,62 +5,88 @@
 <?import javafx.geometry.*?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="ui.CustomerDashboardController"
-            prefWidth="800" prefHeight="700">
+            prefWidth="900" prefHeight="700">
 
     <top>
         <Label text="Customer Dashboard - Vehicle Rental System"
-               style="-fx-font-size: 18px; -fx-font-weight: bold; -fx-padding: 10;" />
+               style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-padding: 15;" />
     </top>
 
     <center>
-        <SplitPane orientation="VERTICAL">
-            <items>
-                <VBox spacing="10">
-                    <padding>
-                        <Insets top="10" right="10" bottom="10" left="10"/>
-                    </padding>
-                    <Label text="Available Cars" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
-                    <TableView fx:id="availableCarsTable" prefHeight="180">
-                        <columns>
-                            <TableColumn fx:id="carIdColumn" text="Car ID" prefWidth="150"/>
-                            <TableColumn fx:id="carModelColumn" text="Model" prefWidth="200"/>
-                            <TableColumn fx:id="carAvailabilityColumn" text="Availability" prefWidth="100"/>
-                        </columns>
-                    </TableView>
-                    <Button fx:id="makeReservationButton" text="Make Reservation" onAction="#handleMakeReservation" prefWidth="160"/>
-                </VBox>
+        <TabPane tabClosingPolicy="UNAVAILABLE">
+            <tabs>
+                <!-- Available Cars Tab -->
+                <Tab text="Available Cars">
+                    <content>
+                        <VBox spacing="10">
+                            <padding>
+                                <Insets top="10" right="10" bottom="10" left="10"/>
+                            </padding>
+                            <Label text="Browse Available Cars" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
 
-                <VBox spacing="10">
-                    <padding>
-                        <Insets top="10" right="10" bottom="10" left="10"/>
-                    </padding>
-                    <Label text="My Reservations" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
-                    <TableView fx:id="reservationTable" prefHeight="180">
-                        <columns>
-                            <TableColumn fx:id="reservationIdColumn" text="Reservation ID" prefWidth="150"/>
-                            <TableColumn fx:id="reservationCarColumn" text="Car ID" prefWidth="150"/>
-                            <TableColumn fx:id="reservationStatusColumn" text="Status" prefWidth="150"/>
-                        </columns>
-                    </TableView>
-                    <Button fx:id="rentButton" text="Rent (Collect Car)" onAction="#handleRentAction" prefWidth="160"/>
-                </VBox>
+                            <TableView fx:id="availableCarsTable" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="carIdColumn" text="Car ID" prefWidth="80"/>
+                                    <TableColumn fx:id="carModelColumn" text="Model" prefWidth="150"/>
+                                    <TableColumn fx:id="carTypeColumn" text="Type" prefWidth="100"/>
+                                    <TableColumn fx:id="carFuelColumn" text="Fuel" prefWidth="100"/>
+                                    <TableColumn fx:id="carSeatsColumn" text="Seats" prefWidth="60"/>
+                                    <TableColumn fx:id="carPriceColumn" text="Price/Day" prefWidth="100"/>
+                                    <TableColumn fx:id="carAvailabilityColumn" text="Status" prefWidth="100"/>
+                                </columns>
+                            </TableView>
 
-                <VBox spacing="10" >
-                    <padding>
-                        <Insets top="10" right="10" bottom="10" left="10"/>
-                    </padding>
-                    <Label text="My Rentals" style="-fx-font-size: 14px; -fx-font-weight: bold;" />
-                    <TableView fx:id="rentalTable" prefHeight="180">
-                        <columns>
-                            <TableColumn fx:id="rentalIdColumn" text="Rental ID" prefWidth="150"/>
-                            <TableColumn fx:id="rentalReservationColumn" text="Reservation ID" prefWidth="150"/>
-                            <TableColumn fx:id="rentalReturnedColumn" text="Status" prefWidth="100"/>
-                        </columns>
-                    </TableView>
-                    <Button fx:id="returnRentalButton" text="Return Rental" onAction="#handleReturnRental" prefWidth="160"/>
-                </VBox>
-            </items>
-        </SplitPane>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Reservation Dates:" style="-fx-font-weight: bold;"/>
+                                <DatePicker fx:id="startDatePicker" promptText="Start Date"/>
+                                <DatePicker fx:id="endDatePicker" promptText="End Date"/>
+                                <Button fx:id="makeReservationButton" text="Reserve Selected Car" onAction="#handleMakeReservation" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                            </HBox>
+                        </VBox>
+                    </content>
+                </Tab>
+
+                <!-- Reservations Tab -->
+                <Tab text="Reservations">
+                    <content>
+                        <VBox spacing="10">
+                            <padding>
+                                <Insets top="10" right="10" bottom="10" left="10"/>
+                            </padding>
+                            <Label text="My Reservations" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+                            <TableView fx:id="reservationTable" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="reservationIdColumn" text="Reservation ID" prefWidth="150"/>
+                                    <TableColumn fx:id="reservationCarColumn" text="Car ID" prefWidth="150"/>
+                                    <TableColumn fx:id="reservationStatusColumn" text="Status" prefWidth="150"/>
+                                </columns>
+                            </TableView>
+                            <Button fx:id="rentButton" text="Rent (Collect Car)" onAction="#handleRentAction" prefWidth="160"/>
+                        </VBox>
+                    </content>
+                </Tab>
+
+                <!-- My Rentals Tab -->
+                <Tab text="My Rentals">
+                    <content>
+                        <VBox spacing="10">
+                            <padding>
+                                <Insets top="10" right="10" bottom="10" left="10"/>
+                            </padding>
+                            <Label text="My Rentals" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+                            <TableView fx:id="rentalTable" VBox.vgrow="ALWAYS">
+                                <columns>
+                                    <TableColumn fx:id="rentalIdColumn" text="Rental ID" prefWidth="150"/>
+                                    <TableColumn fx:id="rentalReservationColumn" text="Reservation ID" prefWidth="150"/>
+                                    <TableColumn fx:id="rentalReturnedColumn" text="Status" prefWidth="100"/>
+                                </columns>
+                            </TableView>
+                            <Button fx:id="returnRentalButton" text="Return Rental" onAction="#handleReturnRental" prefWidth="160"/>
+                        </VBox>
+                    </content>
+                </Tab>
+            </tabs>
+        </TabPane>
     </center>
 
     <bottom>

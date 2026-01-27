@@ -22,16 +22,26 @@ import java.util.stream.Collectors;
 
 public class CustomerDashboardController {
 
+    // --- Available Cars Tab ---
     @FXML private TableView<Car> availableCarsTable;
     @FXML private TableColumn<Car, String> carIdColumn;
     @FXML private TableColumn<Car, String> carModelColumn;
+    @FXML private TableColumn<Car, String> carTypeColumn;
+    @FXML private TableColumn<Car, String> carFuelColumn;
+    @FXML private TableColumn<Car, Integer> carSeatsColumn;
+    @FXML private TableColumn<Car, Double> carPriceColumn;
     @FXML private TableColumn<Car, Boolean> carAvailabilityColumn;
 
+    @FXML private DatePicker startDatePicker;
+    @FXML private DatePicker endDatePicker;
+
+    // --- Reservations Tab ---
     @FXML private TableView<Reservation> reservationTable;
     @FXML private TableColumn<Reservation, String> reservationIdColumn;
     @FXML private TableColumn<Reservation, String> reservationCarColumn;
     @FXML private TableColumn<Reservation, String> reservationStatusColumn;
 
+    // --- My Rentals Tab ---
     @FXML private TableView<Rental> rentalTable;
     @FXML private TableColumn<Rental, String> rentalIdColumn;
     @FXML private TableColumn<Rental, String> rentalReservationColumn;
@@ -45,8 +55,13 @@ public class CustomerDashboardController {
 
     @FXML
     private void initialize() {
+        // Available Cars Table
         carIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         carModelColumn.setCellValueFactory(new PropertyValueFactory<>("model"));
+        carTypeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
+        carFuelColumn.setCellValueFactory(new PropertyValueFactory<>("fuel"));
+        carSeatsColumn.setCellValueFactory(new PropertyValueFactory<>("seats"));
+        carPriceColumn.setCellValueFactory(new PropertyValueFactory<>("pricePerDay"));
         carAvailabilityColumn.setCellValueFactory(new PropertyValueFactory<>("available"));
 
         carAvailabilityColumn.setCellFactory(column -> new TableCell<>() {
@@ -55,6 +70,7 @@ public class CustomerDashboardController {
                 super.updateItem(available, empty);
                 if (empty || available == null) {
                     setText(null);
+                    setStyle("");
                 } else {
                     setText(available ? "Available" : "Reserved");
                     setTextFill(available ? Color.GREEN : Color.RED);
@@ -62,10 +78,12 @@ public class CustomerDashboardController {
             }
         });
 
+        // Reservation Table
         reservationIdColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
         reservationCarColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
         reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
+        // Rental Table
         rentalIdColumn.setCellValueFactory(new PropertyValueFactory<>("rentalId"));
         rentalReservationColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
         rentalReturnedColumn.setCellValueFactory(new PropertyValueFactory<>("returned"));
@@ -76,6 +94,7 @@ public class CustomerDashboardController {
                 super.updateItem(returned, empty);
                 if (empty || returned == null) {
                     setText(null);
+                    setStyle("");
                 } else {
                     setText(returned ? "Completed" : "Active");
                     setTextFill(returned ? Color.BLUE : Color.ORANGE);
@@ -117,12 +136,41 @@ public class CustomerDashboardController {
     private void handleMakeReservation(ActionEvent event) {
         Car selected = availableCarsTable.getSelectionModel().getSelectedItem();
         User currentUser = AuthService.getLoggedInUser();
-        if (selected != null && currentUser != null) {
-            String resId = "RES-" + System.currentTimeMillis();
-            reservationService.createReservation(resId, currentUser.getId(), selected.getId(),
-                    LocalDate.now(), LocalDate.now().plusDays(3));
+        
+        LocalDate start = startDatePicker.getValue();
+        LocalDate end = endDatePicker.getValue();
+
+        if (selected == null) {
+            messageLabel.setText("Please select a car.");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+        if (start == null || end == null) {
+            messageLabel.setText("Please select start and end dates.");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+        if (end.isBefore(start)) {
+            messageLabel.setText("End date cannot be before start date.");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+        if (start.isBefore(LocalDate.now())) {
+            messageLabel.setText("Start date cannot be in the past.");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+
+        if (currentUser != null) {
+            String resId = reservationService.generateNextId();
+            reservationService.createReservation(resId, currentUser.getId(), selected.getId(), start, end);
             refreshAll();
             messageLabel.setText("Reservation " + resId + " submitted (Pending).");
+            messageLabel.setTextFill(Color.GREEN);
+            
+            // Clear pickers
+            startDatePicker.setValue(null);
+            endDatePicker.setValue(null);
         }
     }
 

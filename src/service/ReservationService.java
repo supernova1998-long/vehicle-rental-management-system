@@ -38,6 +38,21 @@ public class ReservationService {
         ReservationFileManager.addReservation(reservation);
     }
 
+    public String generateNextId() {
+        List<Reservation> reservations = ReservationFileManager.loadReservations();
+        if (reservations.isEmpty()) {
+            return "RES001";
+        }
+        String lastId = reservations.get(reservations.size() - 1).getReservationId();
+        try {
+            // Assuming ID format is "RESxxx"
+            int idNum = Integer.parseInt(lastId.replace("RES", ""));
+            return String.format("RES%03d", idNum + 1);
+        } catch (NumberFormatException e) {
+            return "RES" + (reservations.size() + 1);
+        }
+    }
+
     public void approveReservation(String reservationId) {
         List<Reservation> reservations = ReservationFileManager.loadReservations();
         for (Reservation r : reservations) {
