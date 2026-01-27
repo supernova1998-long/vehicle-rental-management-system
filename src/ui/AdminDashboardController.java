@@ -8,6 +8,7 @@ import javafx.event.ActionEvent;
 
 import model.Car;
 import model.Reservation;
+import model.ReservationStatus;
 import service.CarService;
 import service.ReservationService;
 import service.RentalService;
@@ -35,12 +36,10 @@ public class AdminDashboardController {
 
     @FXML
     private void initialize() {
-        // 1. Setup Car Table Columns
         carIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         carModelColumn.setCellValueFactory(new PropertyValueFactory<>("model"));
-
-        // Custom Cell Factory to make Availability look nice
         carAvailabilityColumn.setCellValueFactory(new PropertyValueFactory<>("available"));
+
         carAvailabilityColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Boolean available, boolean empty) {
@@ -49,52 +48,65 @@ public class AdminDashboardController {
                     setText(null);
                     setStyle("");
                 } else {
-                    setText(available ? "Available" : "Rented");
+                    setText(available ? "Available" : "Booked/Rented");
                     setTextFill(available ? Color.GREEN : Color.RED);
-                    setStyle("-fx-font-weight: bold;");
                 }
             }
         });
 
-        // 2. Setup Reservation Table Columns
         reservationIdColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
         reservationCustomerColumn.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         reservationCarColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
         reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        // 3. Load Data
         loadCars();
         loadReservations();
     }
 
     private void loadCars() {
-        List<Car> cars = carService.getAllCars();
-        carTable.getItems().setAll(cars);
+        carTable.getItems().setAll(carService.getAllCars());
     }
 
     private void loadReservations() {
-        List<Reservation> reservations = reservationService.getAllReservations();
-        reservationTable.getItems().setAll(reservations);
+        reservationTable.getItems().setAll(reservationService.getAllReservations());
     }
 
     @FXML
     private void handleApproveReservation(ActionEvent event) {
         Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
+        if (selected != null && selected.getStatus() == ReservationStatus.PENDING) {
             reservationService.approveReservation(selected.getReservationId());
-            loadReservations();
+            refreshAll();
             messageLabel.setText("Reservation " + selected.getReservationId() + " Approved");
+            messageLabel.setTextFill(Color.GREEN);
+        } else {
+            messageLabel.setText("Selection must be PENDING.");
+            messageLabel.setTextFill(Color.RED);
+        }
+    }
+
+    @FXML
+    private void handleCancelReservation(ActionEvent event) {
+        Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
+        if (selected != null && selected.getStatus() == ReservationStatus.PENDING) {
+            reservationService.cancelReservation(selected.getReservationId());
+            refreshAll();
+            messageLabel.setText("Reservation Cancelled.");
+            messageLabel.setTextFill(Color.ORANGE);
         }
     }
 
     @FXML
     private void handleConvertToRental(ActionEvent event) {
         Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            rentalService.startRental("RNT-" + selected.getReservationId(), selected, 50.0);
-            loadReservations();
-            loadCars(); // Refresh cars too since availability likely changed
-            messageLabel.setText("Rental started for " + selected.getReservationId());
+        if (selected != null && selected.getStatus() == ReservationStatus.APPROVED) {
+            rentalService.startRental("RNT-" + System.currentTimeMillis(), selected, 50.0);
+            refreshAll();
+            messageLabel.setText("Rental Active for: " + selected.getReservationId());
+            messageLabel.setTextFill(Color.BLUE);
+        } else {
+            messageLabel.setText("Only APPROVED reservations can be rented.");
+            messageLabel.setTextFill(Color.RED);
         }
     }
 
@@ -102,9 +114,20 @@ public class AdminDashboardController {
     private void handleRemoveCar(ActionEvent event) {
         Car selected = carTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
-            carService.removeCar(selected.getId());
-            loadCars();
-            messageLabel.setText("Car removed successfully.");
+            if (carService.canRemoveOrEdit(selected.getId())) {
+                carService.removeCar(selected.getId());
+                loadCars();
+                messageLabel.setText("Car removed.");
+                messageLabel.setTextFill(Color.GREEN);
+            } else {
+                messageLabel.setText("Cannot remove: Car has active reservations.");
+                messageLabel.setTextFill(Color.RED);
+            }
         }
+    }
+
+    private void refreshAll() {
+        loadCars();
+        loadReservations();
     }
 }
