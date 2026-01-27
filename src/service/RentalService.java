@@ -8,26 +8,26 @@ import model.ReservationStatus;
 import model.Car;
 
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 public class RentalService {
 
-    // Get all rentals
+    private CarService carService = new CarService();
+    private ReservationService reservationService = new ReservationService();
+
     public List<Rental> getAllRentals() {
         return RentalFileManager.loadRentals();
     }
 
-    // Start a rental from a reservation
     public void startRental(String rentalId, Reservation reservation, double dailyRate) {
-        Car car = CarFileManager.findCarById(reservation.getVehicleId());
-        if (car == null || !car.isAvailable()) {
-            System.out.println("RentalService: Car not available for rental.");
+        if (reservation.getStatus() != ReservationStatus.APPROVED) {
+            System.err.println("RentalService: Only APPROVED reservations can be rented.");
             return;
         }
 
-        // Calculate total charge based on reservation dates
-        long days = java.time.temporal.ChronoUnit.DAYS.between(
-                reservation.getStartDate(), reservation.getEndDate());
+        long days = ChronoUnit.DAYS.between(reservation.getStartDate(), reservation.getEndDate());
+        if (days <= 0) days = 1;
         double totalCharge = days * dailyRate;
 
         Rental rental = new Rental(
@@ -39,65 +39,38 @@ public class RentalService {
                 false
         );
 
-        // Update reservation status
-        reservation.setStatus(ReservationStatus.RENTED);
-
-        // Update car availability
-        car.setAvailable(false);
-        List<Car> cars = CarFileManager.loadCars();
-        for (Car c : cars) {
-            if (c.getId().equals(car.getId())) {
-                c.setAvailable(false);
-                break;
-            }
-        }
-        CarFileManager.saveCars(cars);
-
-        // Save rental
+        // State Sync: 1. Start Rental, 2. Update Reservation to RENTED, 3. Car is already false from Approval
         RentalFileManager.addRental(rental);
+        reservationService.updateReservationStatus(reservation.getReservationId(), ReservationStatus.RENTED);
+
         System.out.println("RentalService: Rental started -> " + rentalId);
-        // #toconnect: AdminDashboardController will call this when converting reservation to rental
     }
 
-    // Complete a rental
     public void completeRental(String rentalId) {
         List<Rental> rentals = RentalFileManager.loadRentals();
         for (Rental r : rentals) {
-            if (r.getRentalId().equals(rentalId)) {
+            if (r.getRentalId().equals(rentalId) && !r.isReturned()) {
+                // 1. Update Rental Entry
                 r.setReturned(true);
                 r.setActualEndDate(LocalDate.now());
+                RentalFileManager.saveRentals(rentals);
 
-                // Update car availability
-                Car car = CarFileManager.findCarById(r.getReservationId());
-                if (car != null) {
-                    car.setAvailable(true);
-                    List<Car> cars = CarFileManager.loadCars();
-                    for (Car c : cars) {
-                        if (c.getId().equals(car.getId())) {
-                            c.setAvailable(true);
-                            break;
-                        }
-                    }
-                    CarFileManager.saveCars(cars);
+                // 2. Update Reservation to COMPLETED
+                reservationService.updateReservationStatus(r.getReservationId(), ReservationStatus.COMPLETED);
+
+                // 3. Update Car to AVAILABLE
+                Reservation res = reservationService.findReservationById(r.getReservationId());
+                if (res != null) {
+                    carService.updateCarAvailability(res.getVehicleId(), true);
                 }
 
-                break;
+                System.out.println("RentalService: Rental completed -> " + rentalId);
+                return;
             }
         }
-        RentalFileManager.saveRentals(rentals);
-        System.out.println("RentalService: Rental completed -> " + rentalId);
-        // #toconnect: CustomerDashboardController will call this when customer returns rental
     }
 
-    // Find rental by ID
     public Rental findRentalById(String rentalId) {
-        Rental rental = RentalFileManager.findRentalById(rentalId);
-        if (rental != null) {
-            System.out.println("RentalService: Rental found -> " + rentalId);
-        } else {
-            System.out.println("RentalService: Rental not found -> " + rentalId);
-        }
-        // #toconnect: Controllers will use this for lookups
-        return rental;
+        return RentalFileManager.findRentalById(rentalId);
     }
 }
