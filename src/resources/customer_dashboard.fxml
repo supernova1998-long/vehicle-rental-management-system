@@ -5,7 +5,7 @@
 <?import javafx.geometry.*?>
 
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="ui.CustomerDashboardController"
-            prefWidth="800" prefHeight="600">
+            prefWidth="800" prefHeight="700">
 
     <top>
         <Label text="Customer Dashboard - Vehicle Rental System"
@@ -15,7 +15,6 @@
     <center>
         <SplitPane orientation="VERTICAL">
             <items>
-                <!-- Available Cars Section -->
                 <VBox spacing="10">
                     <padding>
                         <Insets top="10" right="10" bottom="10" left="10"/>
@@ -25,13 +24,12 @@
                         <columns>
                             <TableColumn fx:id="carIdColumn" text="Car ID" prefWidth="150"/>
                             <TableColumn fx:id="carModelColumn" text="Model" prefWidth="200"/>
-                            <TableColumn fx:id="carAvailabilityColumn" text="Available" prefWidth="100"/>
+                            <TableColumn fx:id="carAvailabilityColumn" text="Availability" prefWidth="100"/>
                         </columns>
                     </TableView>
                     <Button fx:id="makeReservationButton" text="Make Reservation" onAction="#handleMakeReservation" prefWidth="160"/>
                 </VBox>
 
-                <!-- Reservations Section -->
                 <VBox spacing="10">
                     <padding>
                         <Insets top="10" right="10" bottom="10" left="10"/>
@@ -44,9 +42,9 @@
                             <TableColumn fx:id="reservationStatusColumn" text="Status" prefWidth="150"/>
                         </columns>
                     </TableView>
+                    <Button fx:id="rentButton" text="Rent (Collect Car)" onAction="#handleRentAction" prefWidth="160"/>
                 </VBox>
 
-                <!-- Rentals Section -->
                 <VBox spacing="10" >
                     <padding>
                         <Insets top="10" right="10" bottom="10" left="10"/>
@@ -56,7 +54,7 @@
                         <columns>
                             <TableColumn fx:id="rentalIdColumn" text="Rental ID" prefWidth="150"/>
                             <TableColumn fx:id="rentalReservationColumn" text="Reservation ID" prefWidth="150"/>
-                            <TableColumn fx:id="rentalReturnedColumn" text="Returned" prefWidth="100"/>
+                            <TableColumn fx:id="rentalReturnedColumn" text="Status" prefWidth="100"/>
                         </columns>
                     </TableView>
                     <Button fx:id="returnRentalButton" text="Return Rental" onAction="#handleReturnRental" prefWidth="160"/>
