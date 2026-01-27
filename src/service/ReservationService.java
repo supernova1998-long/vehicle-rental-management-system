@@ -69,13 +69,15 @@ public class ReservationService {
     public void cancelReservation(String reservationId) {
         List<Reservation> reservations = ReservationFileManager.loadReservations();
         for (Reservation r : reservations) {
-            if (r.getReservationId().equals(reservationId) && r.getStatus() == ReservationStatus.PENDING) {
-                r.setStatus(ReservationStatus.CANCELLED);
-                // Car is already available if it was PENDING, but ensuring it is true doesn't hurt
-                carService.updateCarAvailability(r.getVehicleId(), true);
-                ReservationFileManager.saveReservations(reservations);
-                System.out.println("ReservationService: Cancelled -> " + reservationId);
-                return;
+            if (r.getReservationId().equals(reservationId)) {
+                if (r.getStatus() == ReservationStatus.PENDING || r.getStatus() == ReservationStatus.APPROVED) {
+                    r.setStatus(ReservationStatus.CANCELLED);
+                    // Ensure car is available (crucial if it was APPROVED)
+                    carService.updateCarAvailability(r.getVehicleId(), true);
+                    ReservationFileManager.saveReservations(reservations);
+                    System.out.println("ReservationService: Cancelled -> " + reservationId);
+                    return;
+                }
             }
         }
     }

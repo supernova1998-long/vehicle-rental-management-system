@@ -66,6 +66,7 @@
                             <HBox spacing="10">
                                 <Button fx:id="rentButton" text="Rent (Collect Car)" onAction="#handleRentAction" style="-fx-background-color: #2196F3; -fx-text-fill: white;" prefWidth="160"/>
                                 <Button fx:id="returnRentalButton" text="Return Car" onAction="#handleReturnRental" style="-fx-background-color: #FF9800; -fx-text-fill: white;" prefWidth="160"/>
+                                <Button fx:id="cancelReservationButton" text="Cancel Reservation" onAction="#handleCancelReservation" style="-fx-background-color: #f44336; -fx-text-fill: white;" prefWidth="160"/>
                             </HBox>
                         </VBox>
                     </content>

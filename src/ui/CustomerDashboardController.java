@@ -247,6 +247,25 @@ public class CustomerDashboardController {
         }
     }
 
+    @FXML
+    private void handleCancelReservation(ActionEvent event) {
+        Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            if (selected.getStatus() == ReservationStatus.PENDING || selected.getStatus() == ReservationStatus.APPROVED) {
+                reservationService.cancelReservation(selected.getReservationId());
+                refreshAll();
+                messageLabel.setText("Reservation Cancelled.");
+                messageLabel.setTextFill(Color.ORANGE);
+            } else {
+                messageLabel.setText("Can only cancel PENDING or APPROVED reservations.");
+                messageLabel.setTextFill(Color.RED);
+            }
+        } else {
+            messageLabel.setText("Please select a reservation to cancel.");
+            messageLabel.setTextFill(Color.RED);
+        }
+    }
+
     private void refreshAll() {
         loadAvailableCars();
         loadReservations();
