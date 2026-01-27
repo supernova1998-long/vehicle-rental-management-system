@@ -10,7 +10,6 @@ public class Rental {
     private double totalCharge;
     private boolean returned;
 
-    // Constructor
     public Rental(String rentalId, String reservationId,
                   LocalDate actualStartDate, LocalDate actualEndDate,
                   double totalCharge, boolean returned) {
@@ -22,7 +21,6 @@ public class Rental {
         this.returned = returned;
     }
 
-    // Getters and Setters
     public String getRentalId() {
         return rentalId;
     }
@@ -71,17 +69,10 @@ public class Rental {
         this.returned = returned;
     }
 
-    // Rental actions
-    public void startRental() {
-        this.returned = false;
-        System.out.println("Rental " + rentalId + " started.");
-        // #toconnect: RentalService will persist rental start and calculate charges
-    }
-
-    public void completeRental() {
+    public void completeRental(LocalDate endDate, double finalCharge) {
+        this.actualEndDate = endDate;
+        this.totalCharge = finalCharge;
         this.returned = true;
-        System.out.println("Rental " + rentalId + " completed.");
-        // #toconnect: RentalService will persist rental completion and finalize charges
     }
 
     @Override
