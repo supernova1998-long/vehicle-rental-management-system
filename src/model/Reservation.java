@@ -10,7 +10,6 @@ public class Reservation {
     private LocalDate endDate;
     private ReservationStatus status;
 
-    // Constructor
     public Reservation(String reservationId, String customerId, String vehicleId,
                        LocalDate startDate, LocalDate endDate, ReservationStatus status) {
         this.reservationId = reservationId;
@@ -21,7 +20,6 @@ public class Reservation {
         this.status = status;
     }
 
-    // Getters and Setters
     public String getReservationId() {
         return reservationId;
     }
@@ -70,23 +68,20 @@ public class Reservation {
         this.status = status;
     }
 
-    // Reservation actions
     public void approve() {
         this.status = ReservationStatus.APPROVED;
-        System.out.println("Reservation " + reservationId + " approved.");
-        // #toconnect: ReservationService will persist status change
     }
 
     public void cancel() {
         this.status = ReservationStatus.CANCELLED;
-        System.out.println("Reservation " + reservationId + " cancelled.");
-        // #toconnect: ReservationService will persist status change
     }
 
     public void convertToRental() {
         this.status = ReservationStatus.RENTED;
-        System.out.println("Reservation " + reservationId + " converted to rental.");
-        // #toconnect: RentalService will create Rental record
+    }
+
+    public void complete() {
+        this.status = ReservationStatus.COMPLETED;
     }
 
     @Override
@@ -94,7 +89,7 @@ public class Reservation {
         return "Reservation{" +
                 "reservationId='" + reservationId + '\'' +
                 ", customerId='" + customerId + '\'' +
-                ", carId='" + vehicleId + '\'' +
+                ", vehicleId='" + vehicleId + '\'' +
                 ", startDate=" + startDate +
                 ", endDate=" + endDate +
                 ", status=" + status +
