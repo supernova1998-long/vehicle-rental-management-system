@@ -7,9 +7,11 @@ import javafx.scene.paint.Color;
 import javafx.event.ActionEvent;
 
 import model.Car;
+import model.Customer;
 import model.Reservation;
 import model.ReservationStatus;
 import service.CarService;
+import service.CustomerService;
 import service.ReservationService;
 import service.RentalService;
 
@@ -17,11 +19,30 @@ import java.util.List;
 
 public class AdminDashboardController {
 
+    // --- Cars Tab ---
     @FXML private TableView<Car> carTable;
     @FXML private TableColumn<Car, String> carIdColumn;
     @FXML private TableColumn<Car, String> carModelColumn;
+    @FXML private TableColumn<Car, String> carTypeColumn;
+    @FXML private TableColumn<Car, String> carFuelColumn;
+    @FXML private TableColumn<Car, Integer> carSeatsColumn;
+    @FXML private TableColumn<Car, Double> carPriceColumn;
     @FXML private TableColumn<Car, Boolean> carAvailabilityColumn;
 
+    @FXML private TextField newCarModelField;
+    @FXML private TextField newCarTypeField;
+    @FXML private TextField newCarFuelField;
+    @FXML private TextField newCarSeatsField;
+    @FXML private TextField newCarPriceField;
+
+    // --- Customers Tab ---
+    @FXML private TableView<Customer> customerTable;
+    @FXML private TableColumn<Customer, String> customerIdColumn;
+    @FXML private TableColumn<Customer, String> customerNameColumn;
+    @FXML private TableColumn<Customer, String> customerEmailColumn;
+    @FXML private TableColumn<Customer, String> customerPhoneColumn;
+
+    // --- Reservations Tab ---
     @FXML private TableView<Reservation> reservationTable;
     @FXML private TableColumn<Reservation, String> reservationIdColumn;
     @FXML private TableColumn<Reservation, String> reservationCustomerColumn;
@@ -31,13 +52,19 @@ public class AdminDashboardController {
     @FXML private Label messageLabel;
 
     private CarService carService = new CarService();
+    private CustomerService customerService = new CustomerService();
     private ReservationService reservationService = new ReservationService();
     private RentalService rentalService = new RentalService();
 
     @FXML
     private void initialize() {
+        // Initialize Car Table
         carIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         carModelColumn.setCellValueFactory(new PropertyValueFactory<>("model"));
+        carTypeColumn.setCellValueFactory(new PropertyValueFactory<>("type"));
+        carFuelColumn.setCellValueFactory(new PropertyValueFactory<>("fuel"));
+        carSeatsColumn.setCellValueFactory(new PropertyValueFactory<>("seats"));
+        carPriceColumn.setCellValueFactory(new PropertyValueFactory<>("pricePerDay"));
         carAvailabilityColumn.setCellValueFactory(new PropertyValueFactory<>("available"));
 
         carAvailabilityColumn.setCellFactory(column -> new TableCell<>() {
@@ -54,21 +81,148 @@ public class AdminDashboardController {
             }
         });
 
+        // Initialize Customer Table
+        customerIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        customerNameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        customerEmailColumn.setCellValueFactory(new PropertyValueFactory<>("email"));
+        customerPhoneColumn.setCellValueFactory(new PropertyValueFactory<>("phone"));
+
+        // Initialize Reservation Table
         reservationIdColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
         reservationCustomerColumn.setCellValueFactory(new PropertyValueFactory<>("customerId"));
         reservationCarColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
         reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
+        // Load Data
         loadCars();
+        loadCustomers();
         loadReservations();
+        
+        // Add listener to car table selection to populate edit fields
+        carTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                populateCarFields(newSelection);
+            }
+        });
     }
 
     private void loadCars() {
         carTable.getItems().setAll(carService.getAllCars());
     }
 
+    private void loadCustomers() {
+        customerTable.getItems().setAll(customerService.getAllCustomers());
+    }
+
     private void loadReservations() {
         reservationTable.getItems().setAll(reservationService.getAllReservations());
+    }
+    
+    private void populateCarFields(Car car) {
+        newCarModelField.setText(car.getModel());
+        newCarTypeField.setText(car.getType());
+        newCarFuelField.setText(car.getFuel());
+        newCarSeatsField.setText(String.valueOf(car.getSeats()));
+        newCarPriceField.setText(String.valueOf(car.getPricePerDay()));
+    }
+
+    @FXML
+    private void handleAddCar(ActionEvent event) {
+        try {
+            String model = newCarModelField.getText();
+            String type = newCarTypeField.getText();
+            String fuel = newCarFuelField.getText();
+            String seatsStr = newCarSeatsField.getText();
+            String priceStr = newCarPriceField.getText();
+
+            if (model.isEmpty() || type.isEmpty() || fuel.isEmpty() || seatsStr.isEmpty() || priceStr.isEmpty()) {
+                messageLabel.setText("Please fill all car fields.");
+                messageLabel.setTextFill(Color.RED);
+                return;
+            }
+            
+            int seats = Integer.parseInt(seatsStr);
+            double price = Double.parseDouble(priceStr);
+
+            String id = carService.generateNextId();
+            Car newCar = new Car(id, model, true, type, fuel, seats, price);
+            carService.addCar(newCar);
+
+            loadCars();
+            clearCarInputFields();
+            messageLabel.setText("Car added successfully!");
+            messageLabel.setTextFill(Color.GREEN);
+
+        } catch (NumberFormatException e) {
+            messageLabel.setText("Invalid number for seats or price.");
+            messageLabel.setTextFill(Color.RED);
+        }
+    }
+
+    @FXML
+    private void handleEditCar(ActionEvent event) {
+        Car selected = carTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            messageLabel.setText("Please select a car to edit.");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+
+        if (!selected.isAvailable()) {
+            messageLabel.setText("Cannot edit car: Car is currently booked or rented.");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+
+        try {
+            String model = newCarModelField.getText();
+            String type = newCarTypeField.getText();
+            String fuel = newCarFuelField.getText();
+            String seatsStr = newCarSeatsField.getText();
+            String priceStr = newCarPriceField.getText();
+
+            if (model.isEmpty() || type.isEmpty() || fuel.isEmpty() || seatsStr.isEmpty() || priceStr.isEmpty()) {
+                messageLabel.setText("Please fill all car fields to update.");
+                messageLabel.setTextFill(Color.RED);
+                return;
+            }
+            
+            int seats = Integer.parseInt(seatsStr);
+            double price = Double.parseDouble(priceStr);
+
+            selected.setModel(model);
+            selected.setType(type);
+            selected.setFuel(fuel);
+            selected.setSeats(seats);
+            selected.setPricePerDay(price);
+
+            carService.updateCar(selected);
+            loadCars();
+            clearCarInputFields();
+            messageLabel.setText("Car updated successfully!");
+            messageLabel.setTextFill(Color.GREEN);
+
+        } catch (NumberFormatException e) {
+            messageLabel.setText("Invalid number for seats or price.");
+            messageLabel.setTextFill(Color.RED);
+        }
+    }
+
+    @FXML
+    private void handleRemoveCar(ActionEvent event) {
+        Car selected = carTable.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            if (carService.canRemoveOrEdit(selected.getId())) {
+                carService.removeCar(selected.getId());
+                loadCars();
+                clearCarInputFields();
+                messageLabel.setText("Car removed.");
+                messageLabel.setTextFill(Color.GREEN);
+            } else {
+                messageLabel.setText("Cannot remove: Car has active reservations.");
+                messageLabel.setTextFill(Color.RED);
+            }
+        }
     }
 
     @FXML
@@ -110,24 +264,17 @@ public class AdminDashboardController {
         }
     }
 
-    @FXML
-    private void handleRemoveCar(ActionEvent event) {
-        Car selected = carTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
-            if (carService.canRemoveOrEdit(selected.getId())) {
-                carService.removeCar(selected.getId());
-                loadCars();
-                messageLabel.setText("Car removed.");
-                messageLabel.setTextFill(Color.GREEN);
-            } else {
-                messageLabel.setText("Cannot remove: Car has active reservations.");
-                messageLabel.setTextFill(Color.RED);
-            }
-        }
+    private void clearCarInputFields() {
+        newCarModelField.clear();
+        newCarTypeField.clear();
+        newCarFuelField.clear();
+        newCarSeatsField.clear();
+        newCarPriceField.clear();
     }
 
     private void refreshAll() {
         loadCars();
+        loadCustomers();
         loadReservations();
     }
 }

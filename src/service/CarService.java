@@ -20,6 +20,32 @@ public class CarService {
         System.out.println("CarService: Car added -> " + car.getModel());
     }
 
+    public void updateCar(Car updatedCar) {
+        List<Car> cars = CarFileManager.loadCars();
+        for (int i = 0; i < cars.size(); i++) {
+            if (cars.get(i).getId().equals(updatedCar.getId())) {
+                cars.set(i, updatedCar);
+                break;
+            }
+        }
+        CarFileManager.saveCars(cars);
+        System.out.println("CarService: Car updated -> " + updatedCar.getId());
+    }
+
+    public String generateNextId() {
+        List<Car> cars = CarFileManager.loadCars();
+        if (cars.isEmpty()) {
+            return "C001";
+        }
+        String lastId = cars.get(cars.size() - 1).getId();
+        try {
+            int idNum = Integer.parseInt(lastId.substring(1));
+            return String.format("C%03d", idNum + 1);
+        } catch (NumberFormatException e) {
+            return "C" + (cars.size() + 1);
+        }
+    }
+
     public void removeCar(String carId) {
         if (canRemoveOrEdit(carId)) {
             CarFileManager.removeCar(carId);
