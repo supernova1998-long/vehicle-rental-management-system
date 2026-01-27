@@ -79,6 +79,18 @@ public class RentalService {
             }
         }
     }
+
+    public void updateRentalPaidStatus(String rentalId, boolean paid) {
+        List<Rental> rentals = RentalFileManager.loadRentals();
+        for (Rental r : rentals) {
+            if (r.getRentalId().equals(rentalId)) {
+                r.setPaid(paid);
+                RentalFileManager.saveRentals(rentals);
+                System.out.println("RentalService: Rental " + rentalId + " paid status set to " + paid);
+                return;
+            }
+        }
+    }
     
     public Rental findActiveRentalByReservationId(String reservationId) {
         List<Rental> rentals = RentalFileManager.loadRentals();

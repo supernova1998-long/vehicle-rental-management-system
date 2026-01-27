@@ -10,11 +10,15 @@ import model.Car;
 import model.Customer;
 import model.Reservation;
 import model.ReservationStatus;
+import model.Rental;
 import service.CarService;
 import service.CustomerService;
 import service.ReservationService;
+import service.RentalService;
 
+import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class AdminDashboardController {
 
@@ -53,11 +57,21 @@ public class AdminDashboardController {
     @FXML private TableColumn<Reservation, String> reservationCarColumn;
     @FXML private TableColumn<Reservation, String> reservationStatusColumn;
 
+    // --- Rentals / Prices Tab ---
+    @FXML private TableView<Rental> rentalTable;
+    @FXML private TableColumn<Rental, String> rentalIdColumn;
+    @FXML private TableColumn<Rental, String> rentalReservationColumn;
+    @FXML private TableColumn<Rental, LocalDate> rentalStartDateColumn;
+    @FXML private TableColumn<Rental, LocalDate> rentalEndDateColumn;
+    @FXML private TableColumn<Rental, Double> rentalPriceColumn;
+    @FXML private TableColumn<Rental, Boolean> rentalPaidColumn;
+
     @FXML private Label messageLabel;
 
     private CarService carService = new CarService();
     private CustomerService customerService = new CustomerService();
     private ReservationService reservationService = new ReservationService();
+    private RentalService rentalService = new RentalService();
 
     @FXML
     private void initialize() {
@@ -96,10 +110,33 @@ public class AdminDashboardController {
         reservationCarColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
         reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
+        // Initialize Rental Table
+        rentalIdColumn.setCellValueFactory(new PropertyValueFactory<>("rentalId"));
+        rentalReservationColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
+        rentalStartDateColumn.setCellValueFactory(new PropertyValueFactory<>("actualStartDate"));
+        rentalEndDateColumn.setCellValueFactory(new PropertyValueFactory<>("actualEndDate"));
+        rentalPriceColumn.setCellValueFactory(new PropertyValueFactory<>("totalCharge"));
+        rentalPaidColumn.setCellValueFactory(new PropertyValueFactory<>("paid"));
+
+        rentalPaidColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Boolean paid, boolean empty) {
+                super.updateItem(paid, empty);
+                if (empty || paid == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(paid ? "Yes" : "No");
+                    setTextFill(paid ? Color.GREEN : Color.RED);
+                }
+            }
+        });
+
         // Load Data
         loadCars();
         loadCustomers();
         loadReservations();
+        loadRentals();
         
         // Add listener to car table selection to populate edit fields
         carTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
@@ -126,6 +163,14 @@ public class AdminDashboardController {
 
     private void loadReservations() {
         reservationTable.getItems().setAll(reservationService.getAllReservations());
+    }
+
+    private void loadRentals() {
+        // Only show returned rentals
+        List<Rental> returnedRentals = rentalService.getAllRentals().stream()
+                .filter(Rental::isReturned)
+                .collect(Collectors.toList());
+        rentalTable.getItems().setAll(returnedRentals);
     }
     
     private void populateCarFields(Car car) {
@@ -354,6 +399,36 @@ public class AdminDashboardController {
         }
     }
 
+    // --- Rental Actions ---
+
+    @FXML
+    private void handleMarkPaid(ActionEvent event) {
+        Rental selected = rentalTable.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            rentalService.updateRentalPaidStatus(selected.getRentalId(), true);
+            refreshAll();
+            messageLabel.setText("Rental " + selected.getRentalId() + " marked as PAID.");
+            messageLabel.setTextFill(Color.GREEN);
+        } else {
+            messageLabel.setText("Please select a rental.");
+            messageLabel.setTextFill(Color.RED);
+        }
+    }
+
+    @FXML
+    private void handleMarkUnpaid(ActionEvent event) {
+        Rental selected = rentalTable.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            rentalService.updateRentalPaidStatus(selected.getRentalId(), false);
+            refreshAll();
+            messageLabel.setText("Rental " + selected.getRentalId() + " marked as UNPAID.");
+            messageLabel.setTextFill(Color.ORANGE);
+        } else {
+            messageLabel.setText("Please select a rental.");
+            messageLabel.setTextFill(Color.RED);
+        }
+    }
+
     private void clearCarInputFields() {
         newCarModelField.clear();
         newCarTypeField.clear();
@@ -373,5 +448,6 @@ public class AdminDashboardController {
         loadCars();
         loadCustomers();
         loadReservations();
+        loadRentals();
     }
 }
