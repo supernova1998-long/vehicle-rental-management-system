@@ -8,20 +8,21 @@ import model.Car;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ReservationService {
 
-    // Get all reservations
+    private CarService carService = new CarService();
+
     public List<Reservation> getAllReservations() {
         return ReservationFileManager.loadReservations();
     }
 
-    // Create a new reservation
     public void createReservation(String reservationId, String customerId, String carId,
                                   LocalDate startDate, LocalDate endDate) {
         Car car = CarFileManager.findCarById(carId);
         if (car == null || !car.isAvailable()) {
-            System.out.println("ReservationService: Car not available for reservation.");
+            System.out.println("ReservationService: Car not available.");
             return;
         }
 
@@ -35,56 +36,52 @@ public class ReservationService {
         );
 
         ReservationFileManager.addReservation(reservation);
-        System.out.println("ReservationService: Reservation created -> " + reservationId);
-        // #toconnect: CustomerDashboardController will call this when customer makes a reservation
     }
 
-    // Approve a reservation
     public void approveReservation(String reservationId) {
         List<Reservation> reservations = ReservationFileManager.loadReservations();
         for (Reservation r : reservations) {
-            if (r.getReservationId().equals(reservationId)) {
+            if (r.getReservationId().equals(reservationId) && r.getStatus() == ReservationStatus.PENDING) {
                 r.setStatus(ReservationStatus.APPROVED);
-                break;
+                carService.updateCarAvailability(r.getVehicleId(), false);
+                ReservationFileManager.saveReservations(reservations);
+                System.out.println("ReservationService: Approved -> " + reservationId);
+                return;
             }
         }
-        ReservationFileManager.saveReservations(reservations);
-        System.out.println("ReservationService: Reservation approved -> " + reservationId);
-        // #toconnect: AdminDashboardController will call this when admin approves reservation
     }
 
-    // Cancel a reservation
     public void cancelReservation(String reservationId) {
         List<Reservation> reservations = ReservationFileManager.loadReservations();
         for (Reservation r : reservations) {
-            if (r.getReservationId().equals(reservationId)) {
+            if (r.getReservationId().equals(reservationId) && r.getStatus() == ReservationStatus.PENDING) {
                 r.setStatus(ReservationStatus.CANCELLED);
-                break;
+                carService.updateCarAvailability(r.getVehicleId(), true);
+                ReservationFileManager.saveReservations(reservations);
+                System.out.println("ReservationService: Cancelled -> " + reservationId);
+                return;
             }
         }
-        ReservationFileManager.saveReservations(reservations);
-        System.out.println("ReservationService: Reservation cancelled -> " + reservationId);
-        // #toconnect: AdminDashboardController or CustomerDashboardController will call this
     }
 
-    // Find reservation by ID
-    public Reservation findReservationById(String reservationId) {
-        Reservation reservation = ReservationFileManager.findReservationById(reservationId);
-        if (reservation != null) {
-            System.out.println("ReservationService: Reservation found -> " + reservationId);
-        } else {
-            System.out.println("ReservationService: Reservation not found -> " + reservationId);
-        }
-        // #toconnect: RentalService will use this to convert reservation into rental
-        return reservation;
-    }
-
-    // Get reservations by customer ID
-    public List<Reservation> getReservationsByCustomer(String customerId) {
+    public void updateReservationStatus(String reservationId, ReservationStatus newStatus) {
         List<Reservation> reservations = ReservationFileManager.loadReservations();
-        reservations.removeIf(r -> !r.getCustomerId().equals(customerId));
-        System.out.println("ReservationService: Returning reservations for customer -> " + customerId);
-        // #toconnect: CustomerDashboardController will use this to show reservations
-        return reservations;
+        for (Reservation r : reservations) {
+            if (r.getReservationId().equals(reservationId)) {
+                r.setStatus(newStatus);
+                ReservationFileManager.saveReservations(reservations);
+                return;
+            }
+        }
+    }
+
+    public Reservation findReservationById(String reservationId) {
+        return ReservationFileManager.findReservationById(reservationId);
+    }
+
+    public List<Reservation> getReservationsByCustomer(String customerId) {
+        return ReservationFileManager.loadReservations().stream()
+                .filter(r -> r.getCustomerId().equals(customerId))
+                .collect(Collectors.toList());
     }
 }
