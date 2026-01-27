@@ -49,7 +49,7 @@ public class ReservationService {
             int idNum = Integer.parseInt(lastId.replace("RES", ""));
             return String.format("RES%03d", idNum + 1);
         } catch (NumberFormatException e) {
-            return "RES" + (reservations.size() + 1);
+            return String.format("RES%03d", reservations.size() + 1);
         }
     }
 

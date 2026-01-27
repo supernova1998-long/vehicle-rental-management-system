@@ -12,22 +12,6 @@ public class Customer extends User {
         return "Customer";
     }
 
-    // Customer-specific actions
-    public void makeReservation(String reservationId) {
-        System.out.println("Customer " + getName() + " made reservation " + reservationId);
-        // #toconnect: call ReservationService.createReservation(reservationId, this)
-    }
-
-    public void viewReservations() {
-        System.out.println("Customer " + getName() + " is viewing their reservations");
-        // #toconnect: call ReservationService.getReservationsByCustomer(getId())
-    }
-
-    public void returnRental(String rentalId) {
-        System.out.println("Customer " + getName() + " returned rental " + rentalId);
-        // #toconnect: call RentalService.completeRental(rentalId)
-    }
-
     @Override
     public String toString() {
         return "Customer{" +

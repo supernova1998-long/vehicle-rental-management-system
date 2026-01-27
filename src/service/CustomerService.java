@@ -45,7 +45,7 @@ public class CustomerService {
             int idNum = Integer.parseInt(lastId.replace("CUST", ""));
             return String.format("CUST%03d", idNum + 1);
         } catch (NumberFormatException e) {
-            return "CUST" + (customers.size() + 1);
+            return String.format("CUST%03d", customers.size() + 1);
         }
     }
 
