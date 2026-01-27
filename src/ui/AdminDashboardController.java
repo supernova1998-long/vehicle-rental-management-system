@@ -42,6 +42,11 @@ public class AdminDashboardController {
     @FXML private TableColumn<Customer, String> customerEmailColumn;
     @FXML private TableColumn<Customer, String> customerPhoneColumn;
 
+    @FXML private TextField customerNameField;
+    @FXML private TextField customerEmailField;
+    @FXML private TextField customerPhoneField;
+    @FXML private PasswordField customerPasswordField;
+
     // --- Reservations Tab ---
     @FXML private TableView<Reservation> reservationTable;
     @FXML private TableColumn<Reservation, String> reservationIdColumn;
@@ -104,6 +109,13 @@ public class AdminDashboardController {
                 populateCarFields(newSelection);
             }
         });
+
+        // Add listener to customer table selection to populate edit fields
+        customerTable.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                populateCustomerFields(newSelection);
+            }
+        });
     }
 
     private void loadCars() {
@@ -125,6 +137,15 @@ public class AdminDashboardController {
         newCarSeatsField.setText(String.valueOf(car.getSeats()));
         newCarPriceField.setText(String.valueOf(car.getPricePerDay()));
     }
+
+    private void populateCustomerFields(Customer customer) {
+        customerNameField.setText(customer.getName());
+        customerEmailField.setText(customer.getEmail());
+        customerPhoneField.setText(customer.getPhone());
+        customerPasswordField.setText(customer.getPassword());
+    }
+
+    // --- Car Actions ---
 
     @FXML
     private void handleAddCar(ActionEvent event) {
@@ -225,6 +246,81 @@ public class AdminDashboardController {
         }
     }
 
+    // --- Customer Actions ---
+
+    @FXML
+    private void handleAddCustomer(ActionEvent event) {
+        String name = customerNameField.getText();
+        String email = customerEmailField.getText();
+        String phone = customerPhoneField.getText();
+        String password = customerPasswordField.getText();
+
+        if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || password.isEmpty()) {
+            messageLabel.setText("Please fill all customer fields.");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+
+        String id = customerService.generateNextId();
+        Customer newCustomer = new Customer(id, name, email, phone, password);
+        customerService.addCustomer(newCustomer);
+
+        loadCustomers();
+        clearCustomerInputFields();
+        messageLabel.setText("Customer added successfully!");
+        messageLabel.setTextFill(Color.GREEN);
+    }
+
+    @FXML
+    private void handleEditCustomer(ActionEvent event) {
+        Customer selected = customerTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            messageLabel.setText("Please select a customer to edit.");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+
+        String name = customerNameField.getText();
+        String email = customerEmailField.getText();
+        String phone = customerPhoneField.getText();
+        String password = customerPasswordField.getText();
+
+        if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || password.isEmpty()) {
+            messageLabel.setText("Please fill all customer fields to update.");
+            messageLabel.setTextFill(Color.RED);
+            return;
+        }
+
+        selected.setName(name);
+        selected.setEmail(email);
+        selected.setPhone(phone);
+        selected.setPassword(password);
+
+        customerService.updateCustomer(selected);
+        loadCustomers();
+        clearCustomerInputFields();
+        messageLabel.setText("Customer updated successfully!");
+        messageLabel.setTextFill(Color.GREEN);
+    }
+
+    @FXML
+    private void handleRemoveCustomer(ActionEvent event) {
+        Customer selected = customerTable.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            if (customerService.removeCustomer(selected.getId())) {
+                loadCustomers();
+                clearCustomerInputFields();
+                messageLabel.setText("Customer removed.");
+                messageLabel.setTextFill(Color.GREEN);
+            } else {
+                messageLabel.setText("Cannot remove: Customer has active/pending reservations.");
+                messageLabel.setTextFill(Color.RED);
+            }
+        }
+    }
+
+    // --- Reservation Actions ---
+
     @FXML
     private void handleApproveReservation(ActionEvent event) {
         Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
@@ -270,6 +366,13 @@ public class AdminDashboardController {
         newCarFuelField.clear();
         newCarSeatsField.clear();
         newCarPriceField.clear();
+    }
+
+    private void clearCustomerInputFields() {
+        customerNameField.clear();
+        customerEmailField.clear();
+        customerPhoneField.clear();
+        customerPasswordField.clear();
     }
 
     private void refreshAll() {

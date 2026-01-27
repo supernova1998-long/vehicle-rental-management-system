@@ -37,18 +37,18 @@
                             </TableView>
 
                             <HBox spacing="10" alignment="CENTER_LEFT">
-                                <Label text="Add New Car:" style="-fx-font-weight: bold;"/>
+                                <Label text="Car Details:" style="-fx-font-weight: bold;"/>
                                 <TextField fx:id="newCarModelField" promptText="Model" prefWidth="150"/>
                                 <TextField fx:id="newCarTypeField" promptText="Type" prefWidth="100"/>
                                 <TextField fx:id="newCarFuelField" promptText="Fuel" prefWidth="100"/>
                                 <TextField fx:id="newCarSeatsField" promptText="Seats" prefWidth="60"/>
                                 <TextField fx:id="newCarPriceField" promptText="Price" prefWidth="80"/>
-                                <Button text="Add Car" onAction="#handleAddCar" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
                             </HBox>
 
                             <HBox spacing="10">
-                                <Button fx:id="removeCarButton" text="Remove Selected Car" onAction="#handleRemoveCar" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+                                <Button text="Add Car" onAction="#handleAddCar" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
                                 <Button fx:id="editCarButton" text="Edit Selected Car" onAction="#handleEditCar" />
+                                <Button fx:id="removeCarButton" text="Remove Selected Car" onAction="#handleRemoveCar" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
                             </HBox>
                         </VBox>
                     </content>
@@ -70,6 +70,18 @@
                                     <TableColumn fx:id="customerPhoneColumn" text="Phone" prefWidth="150"/>
                                 </columns>
                             </TableView>
+                            <HBox spacing="10" alignment="CENTER_LEFT">
+                                <Label text="Customer Details:" style="-fx-font-weight: bold;"/>
+                                <TextField fx:id="customerNameField" promptText="Name" prefWidth="150"/>
+                                <TextField fx:id="customerEmailField" promptText="Email" prefWidth="150"/>
+                                <TextField fx:id="customerPhoneField" promptText="Phone" prefWidth="120"/>
+                                <PasswordField fx:id="customerPasswordField" promptText="Password" prefWidth="120"/>
+                            </HBox>
+                            <HBox spacing="10">
+                                <Button text="Add Customer" onAction="#handleAddCustomer" style="-fx-background-color: #4CAF50; -fx-text-fill: white;"/>
+                                <Button text="Edit Selected Customer" onAction="#handleEditCustomer" />
+                                <Button text="Remove Selected Customer" onAction="#handleRemoveCustomer" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
+                            </HBox>
                         </VBox>
                     </content>
                 </Tab>
