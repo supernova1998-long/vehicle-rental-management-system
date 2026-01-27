@@ -15,6 +15,7 @@ import service.CarService;
 import service.CustomerService;
 import service.ReservationService;
 import service.RentalService;
+import service.ValidationService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -192,35 +193,30 @@ public class AdminDashboardController {
 
     @FXML
     private void handleAddCar(ActionEvent event) {
-        try {
-            String model = newCarModelField.getText();
-            String type = newCarTypeField.getText();
-            String fuel = newCarFuelField.getText();
-            String seatsStr = newCarSeatsField.getText();
-            String priceStr = newCarPriceField.getText();
+        String model = newCarModelField.getText();
+        String type = newCarTypeField.getText();
+        String fuel = newCarFuelField.getText();
+        String seatsStr = newCarSeatsField.getText();
+        String priceStr = newCarPriceField.getText();
 
-            if (model.isEmpty() || type.isEmpty() || fuel.isEmpty() || seatsStr.isEmpty() || priceStr.isEmpty()) {
-                messageLabel.setText("Please fill all car fields.");
-                messageLabel.setTextFill(Color.RED);
-                return;
-            }
-            
-            int seats = Integer.parseInt(seatsStr);
-            double price = Double.parseDouble(priceStr);
-
-            String id = carService.generateNextId();
-            Car newCar = new Car(id, model, true, type, fuel, seats, price);
-            carService.addCar(newCar);
-
-            loadCars();
-            clearCarInputFields();
-            messageLabel.setText("Car added successfully!");
-            messageLabel.setTextFill(Color.GREEN);
-
-        } catch (NumberFormatException e) {
-            messageLabel.setText("Invalid number for seats or price.");
+        String validationError = ValidationService.validateCarInput(model, type, fuel, seatsStr, priceStr);
+        if (validationError != null) {
+            messageLabel.setText(validationError);
             messageLabel.setTextFill(Color.RED);
+            return;
         }
+
+        int seats = Integer.parseInt(seatsStr);
+        double price = Double.parseDouble(priceStr);
+
+        String id = carService.generateNextId();
+        Car newCar = new Car(id, model, true, type, fuel, seats, price);
+        carService.addCar(newCar);
+
+        loadCars();
+        clearCarInputFields();
+        messageLabel.setText("Car added successfully!");
+        messageLabel.setTextFill(Color.GREEN);
     }
 
     @FXML
@@ -238,38 +234,33 @@ public class AdminDashboardController {
             return;
         }
 
-        try {
-            String model = newCarModelField.getText();
-            String type = newCarTypeField.getText();
-            String fuel = newCarFuelField.getText();
-            String seatsStr = newCarSeatsField.getText();
-            String priceStr = newCarPriceField.getText();
+        String model = newCarModelField.getText();
+        String type = newCarTypeField.getText();
+        String fuel = newCarFuelField.getText();
+        String seatsStr = newCarSeatsField.getText();
+        String priceStr = newCarPriceField.getText();
 
-            if (model.isEmpty() || type.isEmpty() || fuel.isEmpty() || seatsStr.isEmpty() || priceStr.isEmpty()) {
-                messageLabel.setText("Please fill all car fields to update.");
-                messageLabel.setTextFill(Color.RED);
-                return;
-            }
-            
-            int seats = Integer.parseInt(seatsStr);
-            double price = Double.parseDouble(priceStr);
-
-            selected.setModel(model);
-            selected.setType(type);
-            selected.setFuel(fuel);
-            selected.setSeats(seats);
-            selected.setPricePerDay(price);
-
-            carService.updateCar(selected);
-            loadCars();
-            clearCarInputFields();
-            messageLabel.setText("Car updated successfully!");
-            messageLabel.setTextFill(Color.GREEN);
-
-        } catch (NumberFormatException e) {
-            messageLabel.setText("Invalid number for seats or price.");
+        String validationError = ValidationService.validateCarInput(model, type, fuel, seatsStr, priceStr);
+        if (validationError != null) {
+            messageLabel.setText(validationError);
             messageLabel.setTextFill(Color.RED);
+            return;
         }
+
+        int seats = Integer.parseInt(seatsStr);
+        double price = Double.parseDouble(priceStr);
+
+        selected.setModel(model);
+        selected.setType(type);
+        selected.setFuel(fuel);
+        selected.setSeats(seats);
+        selected.setPricePerDay(price);
+
+        carService.updateCar(selected);
+        loadCars();
+        clearCarInputFields();
+        messageLabel.setText("Car updated successfully!");
+        messageLabel.setTextFill(Color.GREEN);
     }
 
     @FXML
@@ -298,8 +289,9 @@ public class AdminDashboardController {
         String phone = customerPhoneField.getText();
         String password = customerPasswordField.getText();
 
-        if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || password.isEmpty()) {
-            messageLabel.setText("Please fill all customer fields.");
+        String validationError = ValidationService.validateCustomerInput(name, email, phone, password);
+        if (validationError != null) {
+            messageLabel.setText(validationError);
             messageLabel.setTextFill(Color.RED);
             return;
         }
@@ -328,8 +320,9 @@ public class AdminDashboardController {
         String phone = customerPhoneField.getText();
         String password = customerPasswordField.getText();
 
-        if (name.isEmpty() || email.isEmpty() || phone.isEmpty() || password.isEmpty()) {
-            messageLabel.setText("Please fill all customer fields to update.");
+        String validationError = ValidationService.validateCustomerInput(name, email, phone, password);
+        if (validationError != null) {
+            messageLabel.setText(validationError);
             messageLabel.setTextFill(Color.RED);
             return;
         }

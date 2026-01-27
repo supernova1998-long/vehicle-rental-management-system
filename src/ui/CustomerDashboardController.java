@@ -15,6 +15,7 @@ import service.CarService;
 import service.ReservationService;
 import service.RentalService;
 import service.AuthService;
+import service.ValidationService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -173,18 +174,10 @@ public class CustomerDashboardController {
             messageLabel.setTextFill(Color.RED);
             return;
         }
-        if (start == null || end == null) {
-            messageLabel.setText("Please select start and end dates.");
-            messageLabel.setTextFill(Color.RED);
-            return;
-        }
-        if (end.isBefore(start)) {
-            messageLabel.setText("End date cannot be before start date.");
-            messageLabel.setTextFill(Color.RED);
-            return;
-        }
-        if (start.isBefore(LocalDate.now())) {
-            messageLabel.setText("Start date cannot be in the past.");
+        
+        String dateValidation = ValidationService.validateReservationDates(start, end);
+        if (dateValidation != null) {
+            messageLabel.setText(dateValidation);
             messageLabel.setTextFill(Color.RED);
             return;
         }
