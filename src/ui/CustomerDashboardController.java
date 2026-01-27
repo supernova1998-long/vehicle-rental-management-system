@@ -1,15 +1,15 @@
 package ui;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.Label;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.paint.Color;
 import javafx.event.ActionEvent;
 
 import model.Car;
 import model.Reservation;
 import model.Rental;
+import model.User;
 import service.CarService;
 import service.ReservationService;
 import service.RentalService;
@@ -20,90 +20,106 @@ import java.util.List;
 
 public class CustomerDashboardController {
 
-    @FXML
-    private TableView<Car> availableCarsTable;
+    @FXML private TableView<Car> availableCarsTable;
+    @FXML private TableColumn<Car, String> carIdColumn;
+    @FXML private TableColumn<Car, String> carModelColumn;
+    @FXML private TableColumn<Car, Boolean> carAvailabilityColumn;
 
-    @FXML
-    private TableColumn<Car, String> carIdColumn;
+    @FXML private TableView<Reservation> reservationTable;
+    @FXML private TableColumn<Reservation, String> reservationIdColumn;
+    @FXML private TableColumn<Reservation, String> reservationCarColumn;
+    @FXML private TableColumn<Reservation, String> reservationStatusColumn;
 
-    @FXML
-    private TableColumn<Car, String> carModelColumn;
+    @FXML private TableView<Rental> rentalTable;
+    @FXML private TableColumn<Rental, String> rentalIdColumn;
+    @FXML private TableColumn<Rental, String> rentalReservationColumn;
+    @FXML private TableColumn<Rental, Boolean> rentalReturnedColumn;
 
-    @FXML
-    private TableColumn<Car, Boolean> carAvailabilityColumn;
-
-    @FXML
-    private TableView<Reservation> reservationTable;
-
-    @FXML
-    private TableColumn<Reservation, String> reservationIdColumn;
-
-    @FXML
-    private TableColumn<Reservation, String> reservationCarColumn;
-
-    @FXML
-    private TableColumn<Reservation, String> reservationStatusColumn;
-
-    @FXML
-    private TableView<Rental> rentalTable;
-
-    @FXML
-    private TableColumn<Rental, String> rentalIdColumn;
-
-    @FXML
-    private TableColumn<Rental, String> rentalReservationColumn;
-
-    @FXML
-    private TableColumn<Rental, Boolean> rentalReturnedColumn;
-
-    @FXML
-    private Button makeReservationButton;
-
-    @FXML
-    private Button returnRentalButton;
-
-    @FXML
-    private Label messageLabel;
+    @FXML private Label messageLabel;
 
     private CarService carService = new CarService();
     private ReservationService reservationService = new ReservationService();
     private RentalService rentalService = new RentalService();
     private AuthService authService = new AuthService();
 
-    // Initialize dashboard data
     @FXML
     private void initialize() {
+        // 1. Bind Available Cars Table
+        carIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        carModelColumn.setCellValueFactory(new PropertyValueFactory<>("model"));
+        carAvailabilityColumn.setCellValueFactory(new PropertyValueFactory<>("available"));
+
+        // Make the "Available" column look better
+        carAvailabilityColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Boolean available, boolean empty) {
+                super.updateItem(available, empty);
+                if (empty || available == null) {
+                    setText(null);
+                } else {
+                    setText(available ? "Available" : "Booked");
+                    setTextFill(available ? Color.GREEN : Color.RED);
+                }
+            }
+        });
+
+        // 2. Bind Reservations Table
+        reservationIdColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
+        // IMPORTANT: Must match the getter "getVehicleId" we fixed earlier
+        reservationCarColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
+        reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
+
+        // 3. Bind Rental Table
+        rentalIdColumn.setCellValueFactory(new PropertyValueFactory<>("rentalId"));
+        rentalReservationColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
+        rentalReturnedColumn.setCellValueFactory(new PropertyValueFactory<>("returned"));
+
+        // Format the "Returned" column
+        rentalReturnedColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Boolean returned, boolean empty) {
+                super.updateItem(returned, empty);
+                if (empty || returned == null) {
+                    setText(null);
+                } else {
+                    setText(returned ? "Completed" : "Active");
+                    setTextFill(returned ? Color.BLUE : Color.ORANGE);
+                }
+            }
+        });
+
+        // 4. Load the data
         loadAvailableCars();
         loadReservations();
         loadRentals();
-        // #toconnect: Bind table columns to Car, Reservation, and Rental properties
     }
 
-    // Load available cars
     private void loadAvailableCars() {
         List<Car> cars = carService.getAvailableCars();
         availableCarsTable.getItems().setAll(cars);
-        messageLabel.setText("Available cars loaded: " + cars.size());
     }
 
-    // Load reservations for logged-in customer
     private void loadReservations() {
-        if (authService.getLoggedInUser() != null) {
-            String customerId = authService.getLoggedInUser().getId();
+        // Access the STATIC user from AuthService
+        User currentUser = AuthService.getLoggedInUser();
+
+        if (currentUser != null) {
+            String customerId = currentUser.getId();
+            // Filter reservations to only show those belonging to THIS customer
             List<Reservation> reservations = reservationService.getReservationsByCustomer(customerId);
             reservationTable.getItems().setAll(reservations);
-            messageLabel.setText("Reservations loaded: " + reservations.size());
+            messageLabel.setText("Welcome " + currentUser.getName() + "! You have " + reservations.size() + " reservations.");
+        } else {
+            messageLabel.setText("Error: User session lost.");
         }
     }
 
-    // Load rentals (for demonstration, could filter by customer later)
     private void loadRentals() {
+        // Ideally filter by the logged-in customer's reservations
         List<Rental> rentals = rentalService.getAllRentals();
         rentalTable.getItems().setAll(rentals);
-        messageLabel.setText("Rentals loaded: " + rentals.size());
     }
 
-    // Make reservation for selected car
     @FXML
     private void handleMakeReservation(ActionEvent event) {
         Car selected = availableCarsTable.getSelectionModel().getSelectedItem();
@@ -114,28 +130,27 @@ public class CustomerDashboardController {
                     reservationId,
                     customerId,
                     selected.getId(),
-                    LocalDate.now().plusDays(1), // Example start date
-                    LocalDate.now().plusDays(3)  // Example end date
+                    LocalDate.now().plusDays(1),
+                    LocalDate.now().plusDays(3)
             );
             loadReservations();
+            loadAvailableCars(); // Refresh car availability
             messageLabel.setText("Reservation created: " + reservationId);
-            // #toconnect: Refresh UI table after reservation
         } else {
-            messageLabel.setText("No car selected or user not logged in.");
+            messageLabel.setText("Please select a car.");
         }
     }
 
-    // Return selected rental
     @FXML
     private void handleReturnRental(ActionEvent event) {
         Rental selected = rentalTable.getSelectionModel().getSelectedItem();
         if (selected != null) {
             rentalService.completeRental(selected.getRentalId());
             loadRentals();
+            loadAvailableCars(); // Car is now available again
             messageLabel.setText("Rental returned: " + selected.getRentalId());
-            // #toconnect: Refresh UI table after return
         } else {
-            messageLabel.setText("No rental selected.");
+            messageLabel.setText("Please select a rental record.");
         }
     }
 }
