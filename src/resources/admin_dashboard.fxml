@@ -104,8 +104,7 @@
                             </TableView>
                             <HBox spacing="10">
                                 <Button fx:id="approveReservationButton" text="Approve" onAction="#handleApproveReservation" style="-fx-background-color: #2196F3; -fx-text-fill: white;"/>
-                                <Button fx:id="cancelReservationButton" text="Cancel" onAction="#handleCancelReservation" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
-                                <Button fx:id="convertToRentalButton" text="Convert to Rental" onAction="#handleConvertToRental" />
+                                <Button fx:id="cancelReservationButton" text="Cancel / Undo Approval" onAction="#handleCancelReservation" style="-fx-background-color: #f44336; -fx-text-fill: white;"/>
                             </HBox>
                         </VBox>
                     </content>

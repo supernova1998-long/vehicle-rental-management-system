@@ -56,9 +56,23 @@ public class ReservationService {
         for (Reservation r : reservations) {
             if (r.getReservationId().equals(reservationId) && r.getStatus() == ReservationStatus.PENDING) {
                 r.setStatus(ReservationStatus.CANCELLED);
+                // Car is already available if it was PENDING, but ensuring it is true doesn't hurt
                 carService.updateCarAvailability(r.getVehicleId(), true);
                 ReservationFileManager.saveReservations(reservations);
                 System.out.println("ReservationService: Cancelled -> " + reservationId);
+                return;
+            }
+        }
+    }
+
+    public void revertApproval(String reservationId) {
+        List<Reservation> reservations = ReservationFileManager.loadReservations();
+        for (Reservation r : reservations) {
+            if (r.getReservationId().equals(reservationId) && r.getStatus() == ReservationStatus.APPROVED) {
+                r.setStatus(ReservationStatus.PENDING);
+                carService.updateCarAvailability(r.getVehicleId(), true);
+                ReservationFileManager.saveReservations(reservations);
+                System.out.println("ReservationService: Reverted to PENDING -> " + reservationId);
                 return;
             }
         }

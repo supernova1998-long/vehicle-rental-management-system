@@ -13,7 +13,6 @@ import model.ReservationStatus;
 import service.CarService;
 import service.CustomerService;
 import service.ReservationService;
-import service.RentalService;
 
 import java.util.List;
 
@@ -59,7 +58,6 @@ public class AdminDashboardController {
     private CarService carService = new CarService();
     private CustomerService customerService = new CustomerService();
     private ReservationService reservationService = new ReservationService();
-    private RentalService rentalService = new RentalService();
 
     @FXML
     private void initialize() {
@@ -330,7 +328,7 @@ public class AdminDashboardController {
             messageLabel.setText("Reservation " + selected.getReservationId() + " Approved");
             messageLabel.setTextFill(Color.GREEN);
         } else {
-            messageLabel.setText("Selection must be PENDING.");
+            messageLabel.setText("Selection must be PENDING to approve.");
             messageLabel.setTextFill(Color.RED);
         }
     }
@@ -338,25 +336,21 @@ public class AdminDashboardController {
     @FXML
     private void handleCancelReservation(ActionEvent event) {
         Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
-        if (selected != null && selected.getStatus() == ReservationStatus.PENDING) {
-            reservationService.cancelReservation(selected.getReservationId());
-            refreshAll();
-            messageLabel.setText("Reservation Cancelled.");
-            messageLabel.setTextFill(Color.ORANGE);
-        }
-    }
-
-    @FXML
-    private void handleConvertToRental(ActionEvent event) {
-        Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
-        if (selected != null && selected.getStatus() == ReservationStatus.APPROVED) {
-            rentalService.startRental("RNT-" + System.currentTimeMillis(), selected, 50.0);
-            refreshAll();
-            messageLabel.setText("Rental Active for: " + selected.getReservationId());
-            messageLabel.setTextFill(Color.BLUE);
-        } else {
-            messageLabel.setText("Only APPROVED reservations can be rented.");
-            messageLabel.setTextFill(Color.RED);
+        if (selected != null) {
+            if (selected.getStatus() == ReservationStatus.PENDING) {
+                reservationService.cancelReservation(selected.getReservationId());
+                refreshAll();
+                messageLabel.setText("Reservation Cancelled.");
+                messageLabel.setTextFill(Color.ORANGE);
+            } else if (selected.getStatus() == ReservationStatus.APPROVED) {
+                reservationService.revertApproval(selected.getReservationId());
+                refreshAll();
+                messageLabel.setText("Reservation Reverted to PENDING.");
+                messageLabel.setTextFill(Color.BLUE);
+            } else {
+                messageLabel.setText("Can only cancel PENDING or revert APPROVED reservations.");
+                messageLabel.setTextFill(Color.RED);
+            }
         }
     }
 
