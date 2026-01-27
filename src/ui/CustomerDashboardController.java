@@ -8,6 +8,7 @@ import javafx.event.ActionEvent;
 
 import model.Car;
 import model.Reservation;
+import model.ReservationStatus;
 import model.Rental;
 import model.User;
 import service.CarService;
@@ -17,6 +18,7 @@ import service.AuthService;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CustomerDashboardController {
 
@@ -40,16 +42,13 @@ public class CustomerDashboardController {
     private CarService carService = new CarService();
     private ReservationService reservationService = new ReservationService();
     private RentalService rentalService = new RentalService();
-    private AuthService authService = new AuthService();
 
     @FXML
     private void initialize() {
-        // 1. Bind Available Cars Table
         carIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         carModelColumn.setCellValueFactory(new PropertyValueFactory<>("model"));
         carAvailabilityColumn.setCellValueFactory(new PropertyValueFactory<>("available"));
 
-        // Make the "Available" column look better
         carAvailabilityColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Boolean available, boolean empty) {
@@ -57,24 +56,20 @@ public class CustomerDashboardController {
                 if (empty || available == null) {
                     setText(null);
                 } else {
-                    setText(available ? "Available" : "Booked");
+                    setText(available ? "Available" : "Reserved");
                     setTextFill(available ? Color.GREEN : Color.RED);
                 }
             }
         });
 
-        // 2. Bind Reservations Table
         reservationIdColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
-        // IMPORTANT: Must match the getter "getVehicleId" we fixed earlier
         reservationCarColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
         reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
-        // 3. Bind Rental Table
         rentalIdColumn.setCellValueFactory(new PropertyValueFactory<>("rentalId"));
         rentalReservationColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
         rentalReturnedColumn.setCellValueFactory(new PropertyValueFactory<>("returned"));
 
-        // Format the "Returned" column
         rentalReturnedColumn.setCellFactory(column -> new TableCell<>() {
             @Override
             protected void updateItem(Boolean returned, boolean empty) {
@@ -88,69 +83,74 @@ public class CustomerDashboardController {
             }
         });
 
-        // 4. Load the data
-        loadAvailableCars();
-        loadReservations();
-        loadRentals();
+        refreshAll();
     }
 
     private void loadAvailableCars() {
-        List<Car> cars = carService.getAvailableCars();
-        availableCarsTable.getItems().setAll(cars);
+        availableCarsTable.getItems().setAll(carService.getAvailableCars());
     }
 
     private void loadReservations() {
-        // Access the STATIC user from AuthService
         User currentUser = AuthService.getLoggedInUser();
-
         if (currentUser != null) {
-            String customerId = currentUser.getId();
-            // Filter reservations to only show those belonging to THIS customer
-            List<Reservation> reservations = reservationService.getReservationsByCustomer(customerId);
+            List<Reservation> reservations = reservationService.getReservationsByCustomer(currentUser.getId());
             reservationTable.getItems().setAll(reservations);
-            messageLabel.setText("Welcome " + currentUser.getName() + "! You have " + reservations.size() + " reservations.");
-        } else {
-            messageLabel.setText("Error: User session lost.");
         }
     }
 
     private void loadRentals() {
-        // Ideally filter by the logged-in customer's reservations
-        List<Rental> rentals = rentalService.getAllRentals();
-        rentalTable.getItems().setAll(rentals);
+        User currentUser = AuthService.getLoggedInUser();
+        if (currentUser != null) {
+            List<Rental> allRentals = rentalService.getAllRentals();
+            List<Reservation> userRes = reservationService.getReservationsByCustomer(currentUser.getId());
+            List<String> userResIds = userRes.stream().map(Reservation::getReservationId).collect(Collectors.toList());
+
+            List<Rental> userRentals = allRentals.stream()
+                    .filter(r -> userResIds.contains(r.getReservationId()))
+                    .collect(Collectors.toList());
+
+            rentalTable.getItems().setAll(userRentals);
+        }
     }
 
     @FXML
     private void handleMakeReservation(ActionEvent event) {
         Car selected = availableCarsTable.getSelectionModel().getSelectedItem();
-        if (selected != null && authService.getLoggedInUser() != null) {
-            String reservationId = "RES-" + System.currentTimeMillis();
-            String customerId = authService.getLoggedInUser().getId();
-            reservationService.createReservation(
-                    reservationId,
-                    customerId,
-                    selected.getId(),
-                    LocalDate.now().plusDays(1),
-                    LocalDate.now().plusDays(3)
-            );
-            loadReservations();
-            loadAvailableCars(); // Refresh car availability
-            messageLabel.setText("Reservation created: " + reservationId);
+        User currentUser = AuthService.getLoggedInUser();
+        if (selected != null && currentUser != null) {
+            String resId = "RES-" + System.currentTimeMillis();
+            reservationService.createReservation(resId, currentUser.getId(), selected.getId(),
+                    LocalDate.now(), LocalDate.now().plusDays(3));
+            refreshAll();
+            messageLabel.setText("Reservation " + resId + " submitted (Pending).");
+        }
+    }
+
+    @FXML
+    private void handleRentAction(ActionEvent event) {
+        Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
+        if (selected != null && selected.getStatus() == ReservationStatus.APPROVED) {
+            rentalService.startRental("RNT-" + System.currentTimeMillis(), selected, 50.0);
+            refreshAll();
+            messageLabel.setText("Rental started!");
         } else {
-            messageLabel.setText("Please select a car.");
+            messageLabel.setText("You can only rent APPROVED reservations.");
         }
     }
 
     @FXML
     private void handleReturnRental(ActionEvent event) {
         Rental selected = rentalTable.getSelectionModel().getSelectedItem();
-        if (selected != null) {
+        if (selected != null && !selected.isReturned()) {
             rentalService.completeRental(selected.getRentalId());
-            loadRentals();
-            loadAvailableCars(); // Car is now available again
-            messageLabel.setText("Rental returned: " + selected.getRentalId());
-        } else {
-            messageLabel.setText("Please select a rental record.");
+            refreshAll();
+            messageLabel.setText("Car returned successfully.");
         }
+    }
+
+    private void refreshAll() {
+        loadAvailableCars();
+        loadReservations();
+        loadRentals();
     }
 }
