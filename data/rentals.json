@@ -5,7 +5,8 @@
     "actualStartDate": "2026-01-20",
     "actualEndDate": "2026-01-22",
     "totalCharge": 1000.0,
-    "returned": true
+    "returned": true,
+    "paid": true
   },
   {
     "rentalId": "RE002",
@@ -13,6 +14,7 @@
     "actualStartDate": "2026-01-26",
     "actualEndDate": null,
     "totalCharge": 3400.0,
-    "returned": false
+    "returned": false,
+    "paid": false
   }
 ]

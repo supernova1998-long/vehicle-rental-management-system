@@ -43,6 +43,16 @@ public class CustomerDashboardController {
     @FXML private TableColumn<Reservation, LocalDate> reservationEndDateColumn;
     @FXML private TableColumn<Reservation, String> reservationStatusColumn;
 
+    // --- Rental History & Prices Tab ---
+    @FXML private TableView<Rental> rentalTable;
+    @FXML private TableColumn<Rental, String> rentalIdColumn;
+    @FXML private TableColumn<Rental, String> rentalReservationColumn;
+    @FXML private TableColumn<Rental, LocalDate> rentalStartDateColumn;
+    @FXML private TableColumn<Rental, LocalDate> rentalEndDateColumn;
+    @FXML private TableColumn<Rental, Double> rentalPriceColumn;
+    @FXML private TableColumn<Rental, Boolean> rentalReturnedColumn;
+    @FXML private TableColumn<Rental, Boolean> rentalPaidColumn;
+
     @FXML private Label messageLabel;
 
     private CarService carService = new CarService();
@@ -81,6 +91,43 @@ public class CustomerDashboardController {
         reservationEndDateColumn.setCellValueFactory(new PropertyValueFactory<>("endDate"));
         reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
 
+        // Rental Table
+        rentalIdColumn.setCellValueFactory(new PropertyValueFactory<>("rentalId"));
+        rentalReservationColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
+        rentalStartDateColumn.setCellValueFactory(new PropertyValueFactory<>("actualStartDate"));
+        rentalEndDateColumn.setCellValueFactory(new PropertyValueFactory<>("actualEndDate"));
+        rentalPriceColumn.setCellValueFactory(new PropertyValueFactory<>("totalCharge"));
+        rentalReturnedColumn.setCellValueFactory(new PropertyValueFactory<>("returned"));
+        rentalPaidColumn.setCellValueFactory(new PropertyValueFactory<>("paid"));
+
+        rentalReturnedColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Boolean returned, boolean empty) {
+                super.updateItem(returned, empty);
+                if (empty || returned == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(returned ? "Yes" : "No");
+                    setTextFill(returned ? Color.GREEN : Color.RED);
+                }
+            }
+        });
+
+        rentalPaidColumn.setCellFactory(column -> new TableCell<>() {
+            @Override
+            protected void updateItem(Boolean paid, boolean empty) {
+                super.updateItem(paid, empty);
+                if (empty || paid == null) {
+                    setText(null);
+                    setStyle("");
+                } else {
+                    setText(paid ? "Yes" : "No");
+                    setTextFill(paid ? Color.GREEN : Color.RED);
+                }
+            }
+        });
+
         refreshAll();
     }
 
@@ -93,6 +140,23 @@ public class CustomerDashboardController {
         if (currentUser != null) {
             List<Reservation> reservations = reservationService.getReservationsByCustomer(currentUser.getId());
             reservationTable.getItems().setAll(reservations);
+        }
+    }
+
+    private void loadRentals() {
+        User currentUser = AuthService.getLoggedInUser();
+        if (currentUser != null) {
+            List<Rental> allRentals = rentalService.getAllRentals();
+            List<Reservation> userRes = reservationService.getReservationsByCustomer(currentUser.getId());
+            List<String> userResIds = userRes.stream().map(Reservation::getReservationId).collect(Collectors.toList());
+
+            // Filter for rentals belonging to the user AND are returned (completed)
+            List<Rental> userRentals = allRentals.stream()
+                    .filter(r -> userResIds.contains(r.getReservationId()))
+                    .filter(Rental::isReturned) // Only show returned rentals
+                    .collect(Collectors.toList());
+
+            rentalTable.getItems().setAll(userRentals);
         }
     }
 
@@ -186,5 +250,6 @@ public class CustomerDashboardController {
     private void refreshAll() {
         loadAvailableCars();
         loadReservations();
+        loadRentals();
     }
 }

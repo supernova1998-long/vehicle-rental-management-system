@@ -33,7 +33,8 @@ public class RentalService {
                 LocalDate.now(),
                 null,
                 0.0, // Price calculated on return
-                false
+                false,
+                false // Paid is initially false
         );
 
         // State Sync: 1. Start Rental, 2. Update Reservation to RENTED
@@ -62,6 +63,7 @@ public class RentalService {
                         r.setReturned(true);
                         r.setActualEndDate(returnDate);
                         r.setTotalCharge(finalPrice);
+                        // Paid status remains unchanged (false) until Admin updates it
                         RentalFileManager.saveRentals(rentals);
 
                         // 2. Update Reservation to COMPLETED
