@@ -1,53 +1,54 @@
 package service;
 
 import io.CarFileManager;
+import io.ReservationFileManager;
 import model.Car;
+import model.Reservation;
+import model.ReservationStatus;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class CarService {
 
-    // Get all cars
     public List<Car> getAllCars() {
         return CarFileManager.loadCars();
     }
 
-    // Add a new car
     public void addCar(Car car) {
         CarFileManager.addCar(car);
         System.out.println("CarService: Car added -> " + car.getModel());
-        // #toconnect: AdminDashboardController will call this when admin adds a car
     }
 
-    // Remove a car by ID
     public void removeCar(String carId) {
-        CarFileManager.removeCar(carId);
-        System.out.println("CarService: Car removed -> " + carId);
-        // #toconnect: AdminDashboardController will call this when admin removes a car
-    }
-
-    // Find car by ID
-    public Car findCarById(String carId) {
-        Car car = CarFileManager.findCarById(carId);
-        if (car != null) {
-            System.out.println("CarService: Car found -> " + car.getModel());
+        if (canRemoveOrEdit(carId)) {
+            CarFileManager.removeCar(carId);
+            System.out.println("CarService: Car removed -> " + carId);
         } else {
-            System.out.println("CarService: Car not found -> " + carId);
+            System.err.println("CarService: Cannot remove car " + carId + " because it has active/pending reservations.");
         }
-        // #toconnect: ReservationService will use this to check availability
-        return car;
     }
 
-    // List available cars
+    public boolean canRemoveOrEdit(String carId) {
+        List<Reservation> reservations = ReservationFileManager.loadReservations();
+        // Restriction: Only allow if no PENDING, APPROVED, or RENTED reservations exist for this car
+        return reservations.stream()
+                .filter(r -> r.getVehicleId().equals(carId))
+                .noneMatch(r -> r.getStatus() == ReservationStatus.PENDING ||
+                        r.getStatus() == ReservationStatus.APPROVED ||
+                        r.getStatus() == ReservationStatus.RENTED);
+    }
+
+    public Car findCarById(String carId) {
+        return CarFileManager.findCarById(carId);
+    }
+
     public List<Car> getAvailableCars() {
-        List<Car> cars = CarFileManager.loadCars();
-        cars.removeIf(c -> !c.isAvailable());
-        System.out.println("CarService: Returning available cars list.");
-        // #toconnect: CustomerDashboardController will use this to show cars to customers
-        return cars;
+        return CarFileManager.loadCars().stream()
+                .filter(Car::isAvailable)
+                .collect(Collectors.toList());
     }
 
-    // Update car availability
     public void updateCarAvailability(String carId, boolean available) {
         List<Car> cars = CarFileManager.loadCars();
         for (Car c : cars) {
@@ -58,6 +59,5 @@ public class CarService {
         }
         CarFileManager.saveCars(cars);
         System.out.println("CarService: Car availability updated -> " + carId + " = " + available);
-        // #toconnect: RentalService will call this when a rental starts or ends
     }
 }
