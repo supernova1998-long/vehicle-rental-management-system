@@ -57,7 +57,7 @@ public class RentalService {
                         LocalDate expectedEndDate = res.getEndDate();
                         
                         long totalDays = ChronoUnit.DAYS.between(r.getActualStartDate(), returnDate);
-                        if (totalDays <= 0) totalDays = 1; // Minimum 1 day charge
+                        if (totalDays < 1) totalDays = 1; // Minimum 1 day charge
                         
                         double finalPrice = 0.0;
                         
