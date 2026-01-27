@@ -12,17 +12,6 @@ public class Admin extends User {
         return "Admin";
     }
 
-    // Admin-specific actions
-    public void approveReservation(String reservationId) {
-        System.out.println("Reservation " + reservationId + " approved by Admin " + getName());
-        // #toconnect: call ReservationService.approveReservation(reservationId)
-    }
-
-    public void convertToRental(String reservationId) {
-        System.out.println("Reservation " + reservationId + " converted to Rental by Admin " + getName());
-        // #toconnect: call RentalService.startRental(reservationId)
-    }
-
     @Override
     public String toString() {
         return "Admin{" +

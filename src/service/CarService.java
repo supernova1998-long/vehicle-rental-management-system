@@ -42,7 +42,8 @@ public class CarService {
             int idNum = Integer.parseInt(lastId.substring(1));
             return String.format("C%03d", idNum + 1);
         } catch (NumberFormatException e) {
-            return "C" + (cars.size() + 1);
+            // Fallback: If last ID was malformed, count the list size + 1
+            return String.format("C%03d", cars.size() + 1);
         }
     }
 
