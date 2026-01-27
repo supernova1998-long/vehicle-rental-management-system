@@ -20,26 +20,23 @@ public class RentalService {
         return RentalFileManager.loadRentals();
     }
 
-    public void startRental(String rentalId, Reservation reservation, double dailyRate) {
+    public void startRental(String rentalId, Reservation reservation) {
         if (reservation.getStatus() != ReservationStatus.APPROVED) {
             System.err.println("RentalService: Only APPROVED reservations can be rented.");
             return;
         }
 
-        long days = ChronoUnit.DAYS.between(reservation.getStartDate(), reservation.getEndDate());
-        if (days <= 0) days = 1;
-        double totalCharge = days * dailyRate;
-
+        // Record actual start date as NOW, end date as NULL
         Rental rental = new Rental(
                 rentalId,
                 reservation.getReservationId(),
-                reservation.getStartDate(),
-                reservation.getEndDate(),
-                totalCharge,
+                LocalDate.now(),
+                null,
+                0.0, // Price calculated on return
                 false
         );
 
-        // State Sync: 1. Start Rental, 2. Update Reservation to RENTED, 3. Car is already false from Approval
+        // State Sync: 1. Start Rental, 2. Update Reservation to RENTED
         RentalFileManager.addRental(rental);
         reservationService.updateReservationStatus(reservation.getReservationId(), ReservationStatus.RENTED);
 
@@ -50,24 +47,45 @@ public class RentalService {
         List<Rental> rentals = RentalFileManager.loadRentals();
         for (Rental r : rentals) {
             if (r.getRentalId().equals(rentalId) && !r.isReturned()) {
-                // 1. Update Rental Entry
-                r.setReturned(true);
-                r.setActualEndDate(LocalDate.now());
-                RentalFileManager.saveRentals(rentals);
-
-                // 2. Update Reservation to COMPLETED
-                reservationService.updateReservationStatus(r.getReservationId(), ReservationStatus.COMPLETED);
-
-                // 3. Update Car to AVAILABLE
+                // Find reservation to get car details for pricing
                 Reservation res = reservationService.findReservationById(r.getReservationId());
                 if (res != null) {
-                    carService.updateCarAvailability(res.getVehicleId(), true);
-                }
+                    Car car = carService.findCarById(res.getVehicleId());
+                    if (car != null) {
+                        LocalDate returnDate = LocalDate.now();
+                        long days = ChronoUnit.DAYS.between(r.getActualStartDate(), returnDate);
+                        if (days <= 0) days = 1; // Minimum 1 day charge
+                        
+                        double finalPrice = days * car.getPricePerDay();
+                        
+                        // 1. Update Rental Entry
+                        r.setReturned(true);
+                        r.setActualEndDate(returnDate);
+                        r.setTotalCharge(finalPrice);
+                        RentalFileManager.saveRentals(rentals);
 
-                System.out.println("RentalService: Rental completed -> " + rentalId);
-                return;
+                        // 2. Update Reservation to COMPLETED
+                        reservationService.updateReservationStatus(r.getReservationId(), ReservationStatus.COMPLETED);
+
+                        // 3. Update Car to AVAILABLE
+                        carService.updateCarAvailability(res.getVehicleId(), true);
+
+                        System.out.println("RentalService: Rental completed -> " + rentalId + " Price: " + finalPrice);
+                        return;
+                    }
+                }
             }
         }
+    }
+    
+    public Rental findActiveRentalByReservationId(String reservationId) {
+        List<Rental> rentals = RentalFileManager.loadRentals();
+        for (Rental r : rentals) {
+            if (r.getReservationId().equals(reservationId) && !r.isReturned()) {
+                return r;
+            }
+        }
+        return null;
     }
 
     public Rental findRentalById(String rentalId) {

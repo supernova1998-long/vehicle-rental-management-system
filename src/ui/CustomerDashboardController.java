@@ -39,13 +39,9 @@ public class CustomerDashboardController {
     @FXML private TableView<Reservation> reservationTable;
     @FXML private TableColumn<Reservation, String> reservationIdColumn;
     @FXML private TableColumn<Reservation, String> reservationCarColumn;
+    @FXML private TableColumn<Reservation, LocalDate> reservationStartDateColumn;
+    @FXML private TableColumn<Reservation, LocalDate> reservationEndDateColumn;
     @FXML private TableColumn<Reservation, String> reservationStatusColumn;
-
-    // --- My Rentals Tab ---
-    @FXML private TableView<Rental> rentalTable;
-    @FXML private TableColumn<Rental, String> rentalIdColumn;
-    @FXML private TableColumn<Rental, String> rentalReservationColumn;
-    @FXML private TableColumn<Rental, Boolean> rentalReturnedColumn;
 
     @FXML private Label messageLabel;
 
@@ -81,26 +77,9 @@ public class CustomerDashboardController {
         // Reservation Table
         reservationIdColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
         reservationCarColumn.setCellValueFactory(new PropertyValueFactory<>("vehicleId"));
+        reservationStartDateColumn.setCellValueFactory(new PropertyValueFactory<>("startDate"));
+        reservationEndDateColumn.setCellValueFactory(new PropertyValueFactory<>("endDate"));
         reservationStatusColumn.setCellValueFactory(new PropertyValueFactory<>("status"));
-
-        // Rental Table
-        rentalIdColumn.setCellValueFactory(new PropertyValueFactory<>("rentalId"));
-        rentalReservationColumn.setCellValueFactory(new PropertyValueFactory<>("reservationId"));
-        rentalReturnedColumn.setCellValueFactory(new PropertyValueFactory<>("returned"));
-
-        rentalReturnedColumn.setCellFactory(column -> new TableCell<>() {
-            @Override
-            protected void updateItem(Boolean returned, boolean empty) {
-                super.updateItem(returned, empty);
-                if (empty || returned == null) {
-                    setText(null);
-                    setStyle("");
-                } else {
-                    setText(returned ? "Completed" : "Active");
-                    setTextFill(returned ? Color.BLUE : Color.ORANGE);
-                }
-            }
-        });
 
         refreshAll();
     }
@@ -114,21 +93,6 @@ public class CustomerDashboardController {
         if (currentUser != null) {
             List<Reservation> reservations = reservationService.getReservationsByCustomer(currentUser.getId());
             reservationTable.getItems().setAll(reservations);
-        }
-    }
-
-    private void loadRentals() {
-        User currentUser = AuthService.getLoggedInUser();
-        if (currentUser != null) {
-            List<Rental> allRentals = rentalService.getAllRentals();
-            List<Reservation> userRes = reservationService.getReservationsByCustomer(currentUser.getId());
-            List<String> userResIds = userRes.stream().map(Reservation::getReservationId).collect(Collectors.toList());
-
-            List<Rental> userRentals = allRentals.stream()
-                    .filter(r -> userResIds.contains(r.getReservationId()))
-                    .collect(Collectors.toList());
-
-            rentalTable.getItems().setAll(userRentals);
         }
     }
 
@@ -177,28 +141,50 @@ public class CustomerDashboardController {
     @FXML
     private void handleRentAction(ActionEvent event) {
         Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
-        if (selected != null && selected.getStatus() == ReservationStatus.APPROVED) {
-            rentalService.startRental("RNT-" + System.currentTimeMillis(), selected, 50.0);
-            refreshAll();
-            messageLabel.setText("Rental started!");
+        if (selected != null) {
+            if (selected.getStatus() == ReservationStatus.APPROVED) {
+                String rentalId = "RNT-" + System.currentTimeMillis(); 
+                rentalService.startRental(rentalId, selected);
+                refreshAll();
+                messageLabel.setText("Rental started! Car collected.");
+                messageLabel.setTextFill(Color.GREEN);
+            } else {
+                messageLabel.setText("You can only rent APPROVED reservations.");
+                messageLabel.setTextFill(Color.RED);
+            }
         } else {
-            messageLabel.setText("You can only rent APPROVED reservations.");
+            messageLabel.setText("Please select a reservation.");
+            messageLabel.setTextFill(Color.RED);
         }
     }
 
     @FXML
     private void handleReturnRental(ActionEvent event) {
-        Rental selected = rentalTable.getSelectionModel().getSelectedItem();
-        if (selected != null && !selected.isReturned()) {
-            rentalService.completeRental(selected.getRentalId());
-            refreshAll();
-            messageLabel.setText("Car returned successfully.");
+        Reservation selected = reservationTable.getSelectionModel().getSelectedItem();
+        if (selected != null) {
+            if (selected.getStatus() == ReservationStatus.RENTED) {
+                Rental activeRental = rentalService.findActiveRentalByReservationId(selected.getReservationId());
+                if (activeRental != null) {
+                    rentalService.completeRental(activeRental.getRentalId());
+                    refreshAll();
+                    messageLabel.setText("Car returned successfully.");
+                    messageLabel.setTextFill(Color.BLUE);
+                } else {
+                    messageLabel.setText("Error: Could not find active rental for this reservation.");
+                    messageLabel.setTextFill(Color.RED);
+                }
+            } else {
+                messageLabel.setText("You can only return cars for RENTED reservations.");
+                messageLabel.setTextFill(Color.RED);
+            }
+        } else {
+            messageLabel.setText("Please select a reservation to return.");
+            messageLabel.setTextFill(Color.RED);
         }
     }
 
     private void refreshAll() {
         loadAvailableCars();
         loadReservations();
-        loadRentals();
     }
 }
