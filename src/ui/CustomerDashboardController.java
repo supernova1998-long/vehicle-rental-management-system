@@ -1,10 +1,14 @@
 package ui;
 
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.paint.Color;
 import javafx.event.ActionEvent;
+import javafx.stage.Stage;
 
 import model.Car;
 import model.Reservation;
@@ -17,6 +21,7 @@ import service.RentalService;
 import service.AuthService;
 import service.ValidationService;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -196,6 +201,21 @@ public class CustomerDashboardController {
             showMessage("Reservation " + selected.getReservationId() + " cancelled.", false);
         } else {
             showMessage("Only PENDING or APPROVED reservations can be cancelled.", true);
+        }
+    }
+
+    @FXML
+    private void handleLogout(ActionEvent event) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/login.fxml"));
+            Parent root = loader.load();
+            Stage stage = (Stage) tabPane.getScene().getWindow();
+            stage.setScene(new Scene(root));
+            stage.setTitle("Login - Vehicle Rental System");
+            stage.show();
+        } catch (IOException e) {
+            e.printStackTrace();
+            showMessage("Error logging out.", true);
         }
     }
 
