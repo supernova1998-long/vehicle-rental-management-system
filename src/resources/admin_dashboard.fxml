@@ -8,8 +8,12 @@
             prefWidth="900" prefHeight="650">
 
     <top>
-        <Label text="Admin Dashboard - Vehicle Rental System"
-               style="-fx-font-size: 20px; -fx-font-weight: bold; -fx-padding: 15;" />
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 15;">
+            <Label text="Admin Dashboard - Vehicle Rental System"
+                   style="-fx-font-size: 20px; -fx-font-weight: bold;" />
+            <Region HBox.hgrow="ALWAYS" />
+            <Button text="Logout" onAction="#handleLogout" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+        </HBox>
     </top>
 
     <center>
