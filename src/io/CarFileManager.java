@@ -40,7 +40,7 @@ public class CarFileManager {
     }
 
     // Add a new car
-    public static void addCar(Car car) {
+    public static synchronized void addCar(Car car) {
         List<Car> cars = loadCars();
         cars.add(car);
         saveCars(cars);
