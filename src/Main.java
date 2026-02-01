@@ -13,7 +13,7 @@ public class Main extends Application {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/resources/login.fxml"));
             Parent root = loader.load();
 
-            primaryStage.setTitle("Vehicle Rental System - Login");
+            primaryStage.setTitle("Car Rental System - Login");
             primaryStage.setScene(new Scene(root, 400, 250));
             primaryStage.show();
         } catch (Exception e) {
