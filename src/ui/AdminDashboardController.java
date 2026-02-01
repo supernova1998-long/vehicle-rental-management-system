@@ -315,7 +315,7 @@ public class AdminDashboardController {
             Parent root = loader.load();
             Stage stage = (Stage) tabPane.getScene().getWindow();
             stage.setScene(new Scene(root));
-            stage.setTitle("Login - Vehicle Rental System");
+            stage.setTitle("Login - Car Rental System");
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
